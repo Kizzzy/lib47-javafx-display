@@ -7,6 +7,8 @@ public class DisplayTracks {
     
     public boolean loop;
     
+    public String[] colors;
+    
     public List<DisplayTrack> tracks
         = new LinkedList<>();
 }

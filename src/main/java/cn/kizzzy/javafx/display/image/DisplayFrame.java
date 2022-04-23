@@ -16,6 +16,7 @@ public class DisplayFrame {
     public float rotateZ;
     public boolean flipX;
     public boolean flipY;
+    public boolean mixed;
     public BufferedImage image;
     public String extra;
 }

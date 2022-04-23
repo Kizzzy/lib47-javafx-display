@@ -19,6 +19,10 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Slider;
+import javafx.scene.image.Image;
+import javafx.scene.image.WritableImage;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
@@ -29,25 +33,34 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-@SuppressWarnings("unchecked")
+abstract class ImageDisplayViewWrapper extends DisplayViewAdapter implements ICustomControl {
+    
+    @FXML
+    protected CheckBox canvas_black;
+    
+    @FXML
+    protected CheckBox image_filter;
+    
+    @FXML
+    protected Slider slider;
+    
+    @FXML
+    protected HBox color_selector;
+    
+    @FXML
+    protected Canvas canvas;
+    
+    @FXML
+    protected Button play_button;
+    
+    public ImageDisplayViewWrapper() {
+        this.init();
+    }
+}
+
 @DisplayViewAttribute(type = DisplayType.SHOW_IMAGE, title = "图像")
 @CustomControlParamter(fxml = "/fxml/custom/display/display_image_view.fxml")
-public class ImageDisplayView extends DisplayViewAdapter implements ICustomControl, Initializable {
-    
-    @FXML
-    private CheckBox canvas_black;
-    
-    @FXML
-    private CheckBox image_filter;
-    
-    @FXML
-    private Slider slider;
-    
-    @FXML
-    private Canvas canvas;
-    
-    @FXML
-    private Button play_button;
+public class ImageDisplayView extends ImageDisplayViewWrapper implements Initializable {
     
     private int index;
     private int total;
@@ -58,9 +71,18 @@ public class ImageDisplayView extends DisplayViewAdapter implements ICustomContr
     
     private DisplayFrame[] frames;
     
-    public ImageDisplayView() {
-        this.init();
-    }
+    private Color mixedColor;
+    
+    private static final String[] DEFAULT_COLORS = new String[]{
+        "#000000ff",
+        "#0000ffff",
+        "#00ff00ff",
+        "#ff0000ff",
+        "#00ffffff",
+        "#ff00ffff",
+        "#ffff00ff",
+        "#ffffffff"
+    };
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -100,6 +122,29 @@ public class ImageDisplayView extends DisplayViewAdapter implements ICustomContr
         }
     }
     
+    public void setColors(String... colors) {
+        mixedColor = null;
+        color_selector.getChildren().clear();
+        
+        if (colors == null) {
+            colors = DEFAULT_COLORS;
+        }
+        
+        for (final String c : colors) {
+            Color color = Color.valueOf(c);
+            
+            Pane pane = new Pane();
+            pane.setPrefSize(24, 24);
+            pane.setStyle("-fx-background-color: " + c + ";");
+            pane.setOnMouseClicked(event -> {
+                mixedColor = color;
+                showImpl(index);
+            });
+            
+            color_selector.getChildren().add(pane);
+        }
+    }
+    
     public void show(Object data) {
         if (timeline != null) {
             play_button.setText("播放");
@@ -116,6 +161,8 @@ public class ImageDisplayView extends DisplayViewAdapter implements ICustomContr
         
         timeline = new Timeline();
         timeline.setCycleCount(Timeline.INDEFINITE);
+        
+        setColors(tracks.colors);
         
         int i = 0;
         for (DisplayTrack track : tracks.tracks) {
@@ -198,17 +245,43 @@ public class ImageDisplayView extends DisplayViewAdapter implements ICustomContr
         context.save();
         Rotate rotate = new Rotate(frame.rotateZ, frame.x + frame.width / 2, frame.y + frame.height / 2);
         context.setTransform(rotate.getMxx(), rotate.getMyx(), rotate.getMxy(), rotate.getMyy(), rotate.getTx(), rotate.getTy());
-        context.drawImage(
-            SwingFXUtils.toFXImage(frame.image, null),
-            0,
-            0,
-            frame.image.getWidth(),
-            frame.image.getHeight(),
-            frame.x + (frame.flipX ? frame.width : 0),
-            frame.y + (frame.flipY ? frame.height : 0),
-            frame.width * (frame.flipX ? -1 : 1),
-            frame.height * (frame.flipY ? -1 : 1)
-        );
+        
+        Image image = SwingFXUtils.toFXImage(frame.image, null);
+        
+        double dx = frame.x + (frame.flipX ? frame.width : 0);
+        double dy = frame.y + (frame.flipY ? frame.height : 0);
+        double dw = frame.width * (frame.flipX ? -1 : 1);
+        double dh = frame.height * (frame.flipY ? -1 : 1);
+        
+        if (mixedColor != null && frame.mixed) {
+            WritableImage blendImage = new WritableImage((int) frame.width, (int) frame.height);
+            
+            for (int i = 0; i < frame.height; ++i) {
+                for (int j = 0; j < frame.width; ++j) {
+                    int argb = image.getPixelReader().getArgb(j, i);
+                    int a = (int) (((argb >> 24) & 0xFF) * mixedColor.getOpacity());
+                    int r = (int) (((argb >> 16) & 0xFF) * mixedColor.getRed());
+                    int g = (int) (((argb >> 8) & 0xFF) * mixedColor.getGreen());
+                    int b = (int) (((argb >> 0) & 0xFF) * mixedColor.getBlue());
+                    blendImage.getPixelWriter().setArgb(j, i, (a << 24) | (r << 16) | (g << 8) | b);
+                }
+            }
+            image = blendImage;
+            
+            /*Blend blend1 = new Blend();
+            blend1.setMode(BlendMode.SRC_ATOP);
+            blend1.setTopInput(new ColorInput(dx, dy, dw, dh, mixedColor));
+            blend1.setBottomInput(new ImageInput(image, dx, dy));
+            
+            Blend blend2 = new Blend();
+            blend2.setMode(BlendMode.MULTIPLY);
+            blend2.setTopInput(new ImageInput(image, dx, dy));
+            blend2.setBottomInput(blend1);
+            
+            context.applyEffect(blend2);*/
+        }
+        context.drawImage(image, 0, 0, frame.image.getWidth(), frame.image.getHeight(), dx, dy, dw, dh);
+        
         context.restore();
         context.fillText(frame.extra, frame.x, frame.y);
     }

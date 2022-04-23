@@ -6,7 +6,7 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Slider?>
 <?import javafx.scene.layout.*?>
-<fx:root type="AnchorPane" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1">
+<fx:root type="AnchorPane" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1">
     <children>
         <VBox spacing="8.0" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="8.0" AnchorPane.rightAnchor="8.0"
               AnchorPane.topAnchor="8.0">
@@ -15,11 +15,12 @@
                 <CheckBox fx:id="image_filter" text="过滤背景"/>
                 <Slider fx:id="slider" blockIncrement="0.5" majorTickUnit="2.0" min="-1.0" minorTickCount="1"
                         snapToTicks="true" value="-1.0"/>
-                <Pane HBox.hgrow="ALWAYS"/>
+                <HBox fx:id="color_selector" minHeight="24.0" spacing="8.0" HBox.hgrow="ALWAYS"/>
                 <Button mnemonicParsing="false" onAction="#doPrev" text="上一帧" HBox.hgrow="NEVER"/>
                 <Button mnemonicParsing="false" onAction="#doNext" text="下一帧" HBox.hgrow="NEVER"/>
                 <Button fx:id="play_button" mnemonicParsing="false" onAction="#doPlay" text="播放" HBox.hgrow="NEVER"/>
             </HBox>
+
             <ScrollPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
                         AnchorPane.topAnchor="0.0">
                 <content>
