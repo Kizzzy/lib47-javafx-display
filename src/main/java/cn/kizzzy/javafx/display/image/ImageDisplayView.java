@@ -237,8 +237,13 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
         }
         
         context.setStroke(canvas_black.isSelected() ? Color.WHITE : Color.BLACK);
-        context.strokeLine(150, 200, 250, 200);
-        context.strokeLine(200, 180, 200, 220);
+        
+        // draw pivot
+        context.strokeLine(tracks.pivotX - 50, tracks.pivotY, tracks.pivotX + 50, tracks.pivotY);
+        context.strokeLine(tracks.pivotX, tracks.pivotY - 20, tracks.pivotX, tracks.pivotY + 20);
+        
+        // draw border rect
+        context.strokeRect(tracks.borderX, tracks.borderY, tracks.borderW, tracks.borderH);
     }
     
     private void showFrame(GraphicsContext context, DisplayFrame frame) {
