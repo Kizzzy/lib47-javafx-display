@@ -83,7 +83,13 @@ public class TableDisplayView extends DisplayViewAdapter implements ICustomContr
         for (int j = 0; j < temp.length; ++j) {
             final int k = j;
             TableColumn<String[], String> column = new TableColumn<>("" + j);
-            column.setCellValueFactory(cdf -> new SimpleStringProperty(cdf.getValue()[k]));
+            column.setCellValueFactory(cdf -> {
+                if (k < cdf.getValue().length) {
+                    return new SimpleStringProperty(cdf.getValue()[k]);
+                } else {
+                    return new SimpleStringProperty("");
+                }
+            });
             column.setComparator(Comparator.comparing(String::length).thenComparing(String::compareTo));
             column.setMinWidth(96);
             column.setMaxWidth(168);
