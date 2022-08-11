@@ -199,7 +199,7 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
     private void showFrames(DisplayFrame[] frames) {
         GraphicsContext context = canvas.getGraphicsContext2D();
         
-        if (frames == null || frames.length <= 0) {
+        if (frames == null || frames.length == 0) {
             context.clearRect(0, 0, 1920, 1080);
             return;
         }
@@ -248,15 +248,26 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
     
     private void showFrame(GraphicsContext context, DisplayFrame frame) {
         context.save();
+        
         Rotate rotate = new Rotate(frame.rotateZ, frame.x + frame.width / 2, frame.y + frame.height / 2);
         context.setTransform(rotate.getMxx(), rotate.getMyx(), rotate.getMxy(), rotate.getMyy(), rotate.getTx(), rotate.getTy());
-        
-        Image image = SwingFXUtils.toFXImage(frame.image, null);
         
         double dx = frame.x + (frame.flipX ? frame.width : 0);
         double dy = frame.y + (frame.flipY ? frame.height : 0);
         double dw = frame.width * (frame.flipX ? -1 : 1);
         double dh = frame.height * (frame.flipY ? -1 : 1);
+        
+        Image image = createImage(frame);
+        
+        context.drawImage(image, 0, 0, frame.image.getWidth(), frame.image.getHeight(), dx, dy, dw, dh);
+        
+        context.restore();
+        
+        context.fillText(frame.extra, frame.x, frame.y);
+    }
+    
+    private Image createImage(DisplayFrame frame) {
+        Image image = SwingFXUtils.toFXImage(frame.image, null);
         
         if (mixedColor != null && frame.mixed) {
             WritableImage blendImage = new WritableImage((int) frame.width, (int) frame.height);
@@ -272,23 +283,20 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
                 }
             }
             image = blendImage;
-            
+
             /*Blend blend1 = new Blend();
             blend1.setMode(BlendMode.SRC_ATOP);
             blend1.setTopInput(new ColorInput(dx, dy, dw, dh, mixedColor));
             blend1.setBottomInput(new ImageInput(image, dx, dy));
-            
+
             Blend blend2 = new Blend();
             blend2.setMode(BlendMode.MULTIPLY);
             blend2.setTopInput(new ImageInput(image, dx, dy));
             blend2.setBottomInput(blend1);
-            
+
             context.applyEffect(blend2);*/
         }
-        context.drawImage(image, 0, 0, frame.image.getWidth(), frame.image.getHeight(), dx, dy, dw, dh);
-        
-        context.restore();
-        context.fillText(frame.extra, frame.x, frame.y);
+        return image;
     }
     
     private class KeyFrameHandler implements EventHandler<ActionEvent> {

@@ -47,6 +47,12 @@ public class AudioPlayer {
                 
             } catch (UnsupportedAudioFileException | LineUnavailableException | IOException e) {
                 LogHelper.error("play error", e);
+            } finally {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }).start();
     }

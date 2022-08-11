@@ -5,6 +5,7 @@ import cn.kizzzy.javafx.display.Display;
 import cn.kizzzy.javafx.display.DisplayAAA;
 import cn.kizzzy.javafx.display.DisplayAttribute;
 import cn.kizzzy.javafx.display.DisplayType;
+import cn.kizzzy.vfs.IInputStreamGetter;
 import cn.kizzzy.vfs.IPackage;
 
 @DisplayAttribute(suffix = {
@@ -27,9 +28,13 @@ public class AudioDisplay extends Display<IPackage> {
     @Override
     public DisplayAAA load() {
         try {
-            byte[] data = context.load(path, byte[].class);
-            if (data != null) {
-                return new DisplayAAA(DisplayType.SHOW_AUDIO, data);
+            IInputStreamGetter streamGetter = context.getInputStreamGetter(path);
+            if (streamGetter != null) {
+                return new DisplayAAA(DisplayType.SHOW_AUDIO, new AudioArg(
+                    path,
+                    true,
+                    streamGetter
+                ));
             }
         } catch (Exception e) {
             LogHelper.error("init failed: ", e);
