@@ -14,6 +14,8 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
@@ -48,6 +50,9 @@ abstract class ImageDisplayViewWrapper extends DisplayViewAdapter implements ICu
     protected HBox color_selector;
     
     @FXML
+    protected HBox canvasHolder;
+    
+    @FXML
     protected Canvas canvas;
     
     @FXML
@@ -73,6 +78,8 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
     
     private Color mixedColor;
     
+    private Rectangle2D drawRect;
+    
     private static final String[] DEFAULT_COLORS = new String[]{
         "#000000ff",
         "#0000ffff",
@@ -84,9 +91,61 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
         "#ffffffff"
     };
     
+    private Point2D start;
+    private Rectangle2D startRect;
+    private boolean drag = false;
+    
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         canvas_black.selectedProperty().addListener(this::onBlackChanged);
+        
+        canvas.setOnDragDetected(event -> canvas.startFullDrag());
+        canvas.setOnMouseDragEntered(event -> {
+            drag = true;
+            start = new Point2D(event.getX(), event.getY());
+            startRect = new Rectangle2D(drawRect.getMinX(), drawRect.getMinY(), drawRect.getWidth(), drawRect.getHeight());
+        });
+        canvas.setOnMouseDragged(event -> {
+            if (drag) {
+                Point2D curr = new Point2D(event.getX(), event.getY());
+                
+                double newX = startRect.getMinX() - (curr.getX() - start.getX());
+                if (newX < -drawRect.getWidth() / 2) {
+                    newX = drawRect.getWidth() / 2;
+                }
+                
+                double newY = startRect.getMinY() - (curr.getY() - start.getY());
+                if (newY < -drawRect.getHeight() / 2) {
+                    newY = drawRect.getHeight() / 2;
+                }
+                
+                drawRect = new Rectangle2D(newX, newY, startRect.getWidth(), startRect.getHeight());
+                
+                showImpl(index);
+            }
+        });
+        canvas.setOnMouseDragReleased(event -> {
+            drag = false;
+            start = null;
+            startRect = null;
+        });
+        
+        canvasHolder.widthProperty().addListener((observable, oldValue, newValue) -> {
+            canvas.setWidth(newValue.doubleValue());
+            
+            drawRect = new Rectangle2D(drawRect.getMinX(), drawRect.getMinY(), newValue.doubleValue(), drawRect.getHeight());
+            
+            showImpl(index);
+        });
+        canvasHolder.heightProperty().addListener((observable, oldValue, newValue) -> {
+            canvas.setHeight(newValue.doubleValue());
+            
+            drawRect = new Rectangle2D(drawRect.getMinX(), drawRect.getMinY(), drawRect.getWidth(), newValue.doubleValue());
+            
+            showImpl(index);
+        });
+        
+        drawRect = new Rectangle2D(0, 0, canvas.getWidth(), canvas.getHeight());
     }
     
     private void onBlackChanged(Observable observable, boolean oldValue, boolean newValue) {
@@ -153,6 +212,8 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
             timeline = null;
         }
         
+        drawRect = new Rectangle2D(0, 0, canvas.getWidth(), canvas.getHeight());
+        
         tracks = (DisplayTracks) data;
         frames = new DisplayFrame[tracks.tracks.size()];
         
@@ -198,35 +259,20 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
     
     private void showFrames(DisplayFrame[] frames) {
         GraphicsContext context = canvas.getGraphicsContext2D();
+        context.clearRect(0, 0, drawRect.getWidth(), drawRect.getHeight());
         
         if (frames == null || frames.length == 0) {
-            context.clearRect(0, 0, 1920, 1080);
             return;
         }
         
-        List<DisplayFrame> list = new LinkedList<>();
+        drawRect(context, 0, 0, drawRect.getWidth(), drawRect.getHeight());
+        drawFrame(context, 1, 1, drawRect.getWidth() - 2, drawRect.getHeight() - 2);
         
-        float maxWidth = 400, maxHeight = 400;
+        List<DisplayFrame> list = new LinkedList<>();
         for (DisplayFrame frame : frames) {
             if (frame != null) {
-                if (frame.x + frame.width > maxWidth) {
-                    maxWidth = frame.x + frame.width;
-                }
-                if (frame.y + frame.height > maxHeight) {
-                    maxHeight = frame.y + frame.height;
-                }
-                
                 list.add(frame);
             }
-        }
-        canvas.setWidth(maxWidth);
-        canvas.setHeight(maxHeight);
-        
-        context.clearRect(0, 0, maxWidth, maxHeight);
-        
-        if (canvas_black.isSelected()) {
-            context.setFill(Color.BLACK);
-            context.fillRect(0, 0, maxWidth, maxHeight);
         }
         
         list.sort(Comparator.comparingInt(x -> x.order));
@@ -236,34 +282,74 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
             }
         }
         
-        context.setStroke(canvas_black.isSelected() ? Color.WHITE : Color.BLACK);
-        
-        // draw pivot
-        context.strokeLine(tracks.pivotX - 50, tracks.pivotY, tracks.pivotX + 50, tracks.pivotY);
-        context.strokeLine(tracks.pivotX, tracks.pivotY - 20, tracks.pivotX, tracks.pivotY + 20);
-        
-        // draw border rect
-        context.strokeRect(tracks.borderX, tracks.borderY, tracks.borderW, tracks.borderH);
+        drawPivot(context, tracks.pivotX, tracks.pivotY);
+        drawFrame(context, tracks.borderX, tracks.borderY, tracks.borderW, tracks.borderH);
     }
     
     private void showFrame(GraphicsContext context, DisplayFrame frame) {
-        context.save();
-        
-        Rotate rotate = new Rotate(frame.rotateZ, frame.x + frame.width / 2, frame.y + frame.height / 2);
-        context.setTransform(rotate.getMxx(), rotate.getMyx(), rotate.getMxy(), rotate.getMyy(), rotate.getTx(), rotate.getTy());
+        double sx = 0;
+        double sy = 0;
+        double sw = frame.image.getWidth();
+        double sh = frame.image.getHeight();
         
         double dx = frame.x + (frame.flipX ? frame.width : 0);
         double dy = frame.y + (frame.flipY ? frame.height : 0);
         double dw = frame.width * (frame.flipX ? -1 : 1);
         double dh = frame.height * (frame.flipY ? -1 : 1);
         
-        Image image = createImage(frame);
-        
-        context.drawImage(image, 0, 0, frame.image.getWidth(), frame.image.getHeight(), dx, dy, dw, dh);
-        
-        context.restore();
-        
-        context.fillText(frame.extra, frame.x, frame.y);
+        Rectangle2D imageRect = new Rectangle2D(dx, dy, dw, dh);
+        if (drawRect.contains(imageRect)) {
+            dx -= drawRect.getMinX();
+            dy -= drawRect.getMinY();
+            
+            context.save();
+            Rotate rotate = new Rotate(frame.rotateZ, frame.x + frame.width / 2, frame.y + frame.height / 2);
+            context.setTransform(rotate.getMxx(), rotate.getMyx(), rotate.getMxy(), rotate.getMyy(), rotate.getTx(), rotate.getTy());
+            context.drawImage(createImage(frame), sx, sy, sw, sh, dx, dy, dw, dh);
+            context.restore();
+            
+            drawText(context, frame.extra, dx, dy);
+        } else if (drawRect.intersects(imageRect)) {
+            if (dx < drawRect.getMinX()) {
+                sx = drawRect.getMinX() - dx;
+                sw -= sx;
+                
+                dx = 0;
+                dw = sw;
+            } else if ((dx + dw) > drawRect.getMaxX()) {
+                sx = 0;
+                sw = drawRect.getMaxX() - dx;
+                
+                dx -= drawRect.getMinX();
+                dw = sw;
+            } else {
+                dx -= drawRect.getMinX();
+            }
+            
+            if (dy < drawRect.getMinY()) {
+                sy = drawRect.getMinY() - dy;
+                sh -= sy;
+                
+                dy = 0;
+                dh = sh;
+            } else if ((dy + dh) > drawRect.getMaxY()) {
+                sy = 0;
+                sh = drawRect.getMaxY() - dy;
+                
+                dy -= drawRect.getMinY();
+                dh = sh;
+            } else {
+                dy -= drawRect.getMinY();
+            }
+            
+            context.save();
+            Rotate rotate = new Rotate(frame.rotateZ, frame.x + frame.width / 2, frame.y + frame.height / 2);
+            context.setTransform(rotate.getMxx(), rotate.getMyx(), rotate.getMxy(), rotate.getMyy(), rotate.getTx(), rotate.getTy());
+            context.drawImage(createImage(frame), sx, sy, sw, sh, dx, dy, dw, dh);
+            context.restore();
+            
+            drawText(context, frame.extra, dx, dy);
+        }
     }
     
     private Image createImage(DisplayFrame frame) {
@@ -283,20 +369,33 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
                 }
             }
             image = blendImage;
-
-            /*Blend blend1 = new Blend();
-            blend1.setMode(BlendMode.SRC_ATOP);
-            blend1.setTopInput(new ColorInput(dx, dy, dw, dh, mixedColor));
-            blend1.setBottomInput(new ImageInput(image, dx, dy));
-
-            Blend blend2 = new Blend();
-            blend2.setMode(BlendMode.MULTIPLY);
-            blend2.setTopInput(new ImageInput(image, dx, dy));
-            blend2.setBottomInput(blend1);
-
-            context.applyEffect(blend2);*/
         }
+        
         return image;
+    }
+    
+    private void drawText(GraphicsContext context, String text, double x, double y) {
+        context.setFill(canvas_black.isSelected() ? Color.WHITE : Color.BLACK);
+        context.fillText(text, x, y);
+    }
+    
+    private void drawRect(GraphicsContext context, int x, int y, double width, double height) {
+        context.setFill(canvas_black.isSelected() ? Color.BLACK : Color.WHITE);
+        context.fillRect(x, y, width, height);
+    }
+    
+    private void drawFrame(GraphicsContext context, double x, double y, double w, double h) {
+        context.setStroke(canvas_black.isSelected() ? Color.WHITE : Color.BLACK);
+        context.strokeLine(x, y, x + w, y);
+        context.strokeLine(x + w, y, x + w, y + h);
+        context.strokeLine(x + w, y + h, x, y + h);
+        context.strokeLine(x, y + h, x, y);
+    }
+    
+    private void drawPivot(GraphicsContext context, float pivotX, float pivotY) {
+        context.setStroke(canvas_black.isSelected() ? Color.WHITE : Color.BLACK);
+        context.strokeLine(pivotX - 50, pivotY, pivotX + 50, pivotY);
+        context.strokeLine(pivotX, pivotY - 20, pivotX, pivotY + 20);
     }
     
     private class KeyFrameHandler implements EventHandler<ActionEvent> {
