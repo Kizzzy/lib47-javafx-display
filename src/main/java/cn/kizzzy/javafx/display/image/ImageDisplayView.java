@@ -111,12 +111,12 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
                 
                 double newX = startRect.getMinX() - (curr.getX() - start.getX());
                 if (newX < -drawRect.getWidth() / 2) {
-                    newX = drawRect.getWidth() / 2;
+                    newX = -drawRect.getWidth() / 2;
                 }
                 
                 double newY = startRect.getMinY() - (curr.getY() - start.getY());
                 if (newY < -drawRect.getHeight() / 2) {
-                    newY = drawRect.getHeight() / 2;
+                    newY = -drawRect.getHeight() / 2;
                 }
                 
                 drawRect = new Rectangle2D(newX, newY, startRect.getWidth(), startRect.getHeight());
