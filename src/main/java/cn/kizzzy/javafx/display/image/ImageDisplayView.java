@@ -8,7 +8,6 @@ import cn.kizzzy.javafx.display.DisplayViewAttribute;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import javafx.beans.Observable;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -67,19 +66,6 @@ abstract class ImageDisplayViewWrapper extends DisplayViewAdapter implements ICu
 @CustomControlParamter(fxml = "/fxml/custom/display/display_image_view.fxml")
 public class ImageDisplayView extends ImageDisplayViewWrapper implements Initializable {
     
-    private int index;
-    private int total;
-    
-    private Timeline timeline;
-    
-    private DisplayTracks tracks;
-    
-    private DisplayFrame[] frames;
-    
-    private Color mixedColor;
-    
-    private Rectangle2D drawRect;
-    
     private static final String[] DEFAULT_COLORS = new String[]{
         "#000000ff",
         "#0000ffff",
@@ -91,13 +77,27 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
         "#ffffffff"
     };
     
+    private int index;
+    private int total;
+    
+    private Timeline timeline;
+    
+    private DisplayTracks tracks;
+    private DisplayFrame[] frames;
+    
+    private Color mixedColor;
+    
+    private Rectangle2D drawRect;
+    
     private Point2D start;
     private Rectangle2D startRect;
     private boolean drag = false;
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        canvas_black.selectedProperty().addListener(this::onBlackChanged);
+        canvas_black.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            showFrames(frames);
+        });
         
         canvas.setOnDragDetected(event -> canvas.startFullDrag());
         canvas.setOnMouseDragEntered(event -> {
@@ -121,7 +121,7 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
                 
                 drawRect = new Rectangle2D(newX, newY, startRect.getWidth(), startRect.getHeight());
                 
-                showImpl(index);
+                showFrames(frames);
             }
         });
         canvas.setOnMouseDragReleased(event -> {
@@ -135,21 +135,17 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
             
             drawRect = new Rectangle2D(drawRect.getMinX(), drawRect.getMinY(), newValue.doubleValue(), drawRect.getHeight());
             
-            showImpl(index);
+            showFrames(frames);
         });
         canvasHolder.heightProperty().addListener((observable, oldValue, newValue) -> {
             canvas.setHeight(newValue.doubleValue());
             
             drawRect = new Rectangle2D(drawRect.getMinX(), drawRect.getMinY(), drawRect.getWidth(), newValue.doubleValue());
             
-            showImpl(index);
+            showFrames(frames);
         });
         
         drawRect = new Rectangle2D(0, 0, canvas.getWidth(), canvas.getHeight());
-    }
-    
-    private void onBlackChanged(Observable observable, boolean oldValue, boolean newValue) {
-        showFrames(frames);
     }
     
     @FXML
@@ -380,8 +376,10 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
     }
     
     private void drawRect(GraphicsContext context, int x, int y, double width, double height) {
-        context.setFill(canvas_black.isSelected() ? Color.BLACK : Color.WHITE);
-        context.fillRect(x, y, width, height);
+        if (canvas_black.isSelected()) {
+            context.setFill(Color.BLACK);
+            context.fillRect(x, y, width, height);
+        }
     }
     
     private void drawFrame(GraphicsContext context, double x, double y, double w, double h) {
