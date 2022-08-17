@@ -2,12 +2,15 @@ package cn.kizzzy.javafx.display.image;
 
 import cn.kizzzy.javafx.custom.CustomControlParamter;
 import cn.kizzzy.javafx.custom.ICustomControl;
+import cn.kizzzy.javafx.custom.LabeledSlider;
 import cn.kizzzy.javafx.display.DisplayType;
 import cn.kizzzy.javafx.display.DisplayViewAdapter;
 import cn.kizzzy.javafx.display.DisplayViewAttribute;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -19,7 +22,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.Slider;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
@@ -37,25 +40,37 @@ import java.util.ResourceBundle;
 abstract class ImageDisplayViewWrapper extends DisplayViewAdapter implements ICustomControl {
     
     @FXML
-    protected CheckBox canvas_black;
+    protected CheckBox black_chk;
     
     @FXML
-    protected CheckBox image_filter;
+    protected CheckBox filter_chk;
     
     @FXML
-    protected Slider slider;
+    protected HBox color_hld;
     
     @FXML
-    protected HBox color_selector;
+    protected LabeledSlider scale_sld;
     
     @FXML
-    protected HBox canvasHolder;
+    protected ChoiceBox<DisplayLayer> layer_cob;
+    
+    @FXML
+    protected LabeledSlider layer_sld;
+    
+    @FXML
+    protected Button prev_btn;
+    
+    @FXML
+    protected Button next_btn;
+    
+    @FXML
+    protected Button play_btn;
+    
+    @FXML
+    protected HBox canvas_hld;
     
     @FXML
     protected Canvas canvas;
-    
-    @FXML
-    protected Button play_button;
     
     public ImageDisplayViewWrapper() {
         this.init();
@@ -87,6 +102,8 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
     
     private Color mixedColor;
     
+    private IntegerProperty layer;
+    
     private Rectangle2D drawRect;
     
     private Point2D start;
@@ -95,8 +112,50 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        canvas_black.selectedProperty().addListener((observable, oldValue, newValue) -> {
+        layer = new SimpleIntegerProperty();
+        layer.addListener((observable, oldValue, newValue) -> {
+            if (layer_cob.getValue() != DisplayLayer.NONE) {
+                showFrames(frames);
+            }
+        });
+        
+        black_chk.selectedProperty().addListener((observable, oldValue, newValue) -> {
             showFrames(frames);
+        });
+        
+        layer_cob.getItems().addAll(DisplayLayer.values());
+        layer_cob.valueProperty().addListener((observable, oldValue, newValue) -> {
+            showFrames(frames);
+        });
+        
+        layer_sld.valueProperty().addListener((observable, oldValue, newValue) -> {
+            layer.setValue(newValue);
+        });
+        
+        prev_btn.setOnAction(event -> {
+            index--;
+            if (index < 0) {
+                index = 0;
+            }
+            showImpl(index);
+        });
+        
+        next_btn.setOnAction(event -> {
+            index++;
+            if (index >= total) {
+                index = total - 1;
+            }
+            showImpl(index);
+        });
+        
+        play_btn.setOnAction(event -> {
+            if (timeline.getStatus() == Animation.Status.RUNNING) {
+                timeline.stop();
+                play_btn.setText("播放");
+            } else {
+                timeline.play();
+                play_btn.setText("停止");
+            }
         });
         
         canvas.setOnDragDetected(event -> canvas.startFullDrag());
@@ -130,14 +189,14 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
             startRect = null;
         });
         
-        canvasHolder.widthProperty().addListener((observable, oldValue, newValue) -> {
+        canvas_hld.widthProperty().addListener((observable, oldValue, newValue) -> {
             canvas.setWidth(newValue.doubleValue());
             
             drawRect = new Rectangle2D(drawRect.getMinX(), drawRect.getMinY(), newValue.doubleValue(), drawRect.getHeight());
             
             showFrames(frames);
         });
-        canvasHolder.heightProperty().addListener((observable, oldValue, newValue) -> {
+        canvas_hld.heightProperty().addListener((observable, oldValue, newValue) -> {
             canvas.setHeight(newValue.doubleValue());
             
             drawRect = new Rectangle2D(drawRect.getMinX(), drawRect.getMinY(), drawRect.getWidth(), newValue.doubleValue());
@@ -148,38 +207,9 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
         drawRect = new Rectangle2D(0, 0, canvas.getWidth(), canvas.getHeight());
     }
     
-    @FXML
-    private void doPrev(ActionEvent event) {
-        index--;
-        if (index < 0) {
-            index = 0;
-        }
-        showImpl(index);
-    }
-    
-    @FXML
-    private void doNext(ActionEvent event) {
-        index++;
-        if (index >= total) {
-            index = total - 1;
-        }
-        showImpl(index);
-    }
-    
-    @FXML
-    private void doPlay(ActionEvent event) {
-        if (timeline.getStatus() == Animation.Status.RUNNING) {
-            timeline.stop();
-            play_button.setText("播放");
-        } else {
-            timeline.play();
-            play_button.setText("停止");
-        }
-    }
-    
     public void setColors(String... colors) {
         mixedColor = null;
-        color_selector.getChildren().clear();
+        color_hld.getChildren().clear();
         
         if (colors == null) {
             colors = DEFAULT_COLORS;
@@ -196,13 +226,13 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
                 showImpl(index);
             });
             
-            color_selector.getChildren().add(pane);
+            color_hld.getChildren().add(pane);
         }
     }
     
     public void show(Object data) {
         if (timeline != null) {
-            play_button.setText("播放");
+            play_btn.setText("播放");
             
             timeline.stop();
             timeline = null;
@@ -222,16 +252,29 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
         setColors(tracks.colors);
         
         int i = 0;
+        int min_layer = Integer.MAX_VALUE, max_layer = Integer.MIN_VALUE;
         for (DisplayTrack track : tracks.tracks) {
             if (track.frames.size() > total) {
                 total = track.frames.size();
             }
             for (DisplayFrame frame : track.frames) {
+                if (frame.order > max_layer) {
+                    max_layer = frame.order;
+                }
+                if (frame.order < min_layer) {
+                    min_layer = frame.order;
+                }
+                
                 KeyFrame keyFrame = new KeyFrame(Duration.millis(frame.time), new KeyFrameHandler(i, frame));
                 timeline.getKeyFrames().add(keyFrame);
             }
             i++;
         }
+        
+        layer_cob.setValue(DisplayLayer.NONE);
+        layer_sld.setMin(min_layer);
+        layer_sld.setMax(max_layer);
+        layer_sld.setValue(min_layer);
         
         showImpl(index);
     }
@@ -273,7 +316,7 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
         
         list.sort(Comparator.comparingInt(x -> x.order));
         for (DisplayFrame frame : list) {
-            if (frame != null) {
+            if (frame != null && layer_cob.getValue().check(frame.order, layer.getValue())) {
                 showFrame(context, frame);
             }
         }
@@ -371,19 +414,19 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
     }
     
     private void drawText(GraphicsContext context, String text, double x, double y) {
-        context.setFill(canvas_black.isSelected() ? Color.WHITE : Color.BLACK);
+        context.setFill(black_chk.isSelected() ? Color.WHITE : Color.BLACK);
         context.fillText(text, x, y);
     }
     
     private void drawRect(GraphicsContext context, int x, int y, double width, double height) {
-        if (canvas_black.isSelected()) {
+        if (black_chk.isSelected()) {
             context.setFill(Color.BLACK);
             context.fillRect(x, y, width, height);
         }
     }
     
     private void drawFrame(GraphicsContext context, double x, double y, double w, double h) {
-        context.setStroke(canvas_black.isSelected() ? Color.WHITE : Color.BLACK);
+        context.setStroke(black_chk.isSelected() ? Color.WHITE : Color.BLACK);
         context.strokeLine(x, y, x + w, y);
         context.strokeLine(x + w, y, x + w, y + h);
         context.strokeLine(x + w, y + h, x, y + h);
@@ -391,7 +434,7 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
     }
     
     private void drawPivot(GraphicsContext context, float pivotX, float pivotY) {
-        context.setStroke(canvas_black.isSelected() ? Color.WHITE : Color.BLACK);
+        context.setStroke(black_chk.isSelected() ? Color.WHITE : Color.BLACK);
         context.strokeLine(pivotX - 50, pivotY, pivotX + 50, pivotY);
         context.strokeLine(pivotX, pivotY - 20, pivotX, pivotY + 20);
     }
