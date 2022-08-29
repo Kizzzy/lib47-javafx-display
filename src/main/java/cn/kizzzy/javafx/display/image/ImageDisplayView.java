@@ -6,18 +6,16 @@ import cn.kizzzy.javafx.custom.LabeledSlider;
 import cn.kizzzy.javafx.display.DisplayType;
 import cn.kizzzy.javafx.display.DisplayViewAdapter;
 import cn.kizzzy.javafx.display.DisplayViewAttribute;
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
+import cn.kizzzy.javafx.display.image.aoi.AoiMap;
+import cn.kizzzy.javafx.display.image.aoi.Area;
+import cn.kizzzy.javafx.display.image.aoi.Element;
+import cn.kizzzy.javafx.display.image.aoi.Vector4f;
+import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.embed.swing.SwingFXUtils;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.Point2D;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
@@ -29,7 +27,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
-import javafx.util.Duration;
 
 import java.net.URL;
 import java.util.Comparator;
@@ -37,7 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-abstract class ImageDisplayViewWrapper extends DisplayViewAdapter implements ICustomControl {
+abstract class ImageDisplayViewBase extends DisplayViewAdapter implements ICustomControl {
     
     @FXML
     protected CheckBox black_chk;
@@ -72,14 +69,14 @@ abstract class ImageDisplayViewWrapper extends DisplayViewAdapter implements ICu
     @FXML
     protected Canvas canvas;
     
-    public ImageDisplayViewWrapper() {
+    public ImageDisplayViewBase() {
         this.init();
     }
 }
 
 @DisplayViewAttribute(type = DisplayType.SHOW_IMAGE, title = "图像")
 @CustomControlParamter(fxml = "/fxml/custom/display/display_image_view.fxml")
-public class ImageDisplayView extends ImageDisplayViewWrapper implements Initializable {
+public class ImageDisplayView extends ImageDisplayViewBase implements Initializable {
     
     private static final String[] DEFAULT_COLORS = new String[]{
         "#000000ff",
@@ -95,37 +92,37 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
     private int index;
     private int total;
     
-    private Timeline timeline;
-    
-    private DisplayTracks tracks;
-    private DisplayFrame[] frames;
+    private float width;
+    private float height;
     
     private Color mixedColor;
     
     private IntegerProperty layer;
     
-    private Rectangle2D drawRect;
+    private Rect drawRect;
+    private Vector4f range;
+    private CanvasDraggingThread draggingThread;
     
-    private Point2D start;
-    private Rectangle2D startRect;
-    private boolean drag = false;
+    private AoiMap map;
+    
+    private DisplayTracks tracks;
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         layer = new SimpleIntegerProperty();
         layer.addListener((observable, oldValue, newValue) -> {
             if (layer_cob.getValue() != DisplayLayer.NONE) {
-                showFrames(frames);
+                showImpl();
             }
         });
         
         black_chk.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            showFrames(frames);
+            showImpl();
         });
         
         layer_cob.getItems().addAll(DisplayLayer.values());
         layer_cob.valueProperty().addListener((observable, oldValue, newValue) -> {
-            showFrames(frames);
+            showImpl();
         });
         
         layer_sld.valueProperty().addListener((observable, oldValue, newValue) -> {
@@ -133,78 +130,77 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
         });
         
         prev_btn.setOnAction(event -> {
-            index--;
-            if (index < 0) {
-                index = 0;
+            if (index > 0) {
+                --index;
+                showImpl();
             }
-            showImpl(index);
         });
         
         next_btn.setOnAction(event -> {
-            index++;
-            if (index >= total) {
-                index = total - 1;
+            if (index < total - 1) {
+                ++index;
+                showImpl();
             }
-            showImpl(index);
         });
         
         play_btn.setOnAction(event -> {
-            if (timeline.getStatus() == Animation.Status.RUNNING) {
-                timeline.stop();
-                play_btn.setText("播放");
-            } else {
-                timeline.play();
-                play_btn.setText("停止");
-            }
+            // todo
         });
         
         canvas.setOnDragDetected(event -> canvas.startFullDrag());
         canvas.setOnMouseDragEntered(event -> {
-            drag = true;
-            start = new Point2D(event.getX(), event.getY());
-            startRect = new Rectangle2D(drawRect.getMinX(), drawRect.getMinY(), drawRect.getWidth(), drawRect.getHeight());
+            if (draggingThread == null) {
+                draggingThread = new CanvasDraggingThread(
+                    new Point(event.getX(), event.getY()),
+                    drawRect,
+                    this::onCanvasDragging
+                );
+                draggingThread.start();
+            }
         });
         canvas.setOnMouseDragged(event -> {
-            if (drag) {
-                Point2D curr = new Point2D(event.getX(), event.getY());
-                
-                double newX = startRect.getMinX() - (curr.getX() - start.getX());
-                if (newX < -drawRect.getWidth() / 2) {
-                    newX = -drawRect.getWidth() / 2;
-                }
-                
-                double newY = startRect.getMinY() - (curr.getY() - start.getY());
-                if (newY < -drawRect.getHeight() / 2) {
-                    newY = -drawRect.getHeight() / 2;
-                }
-                
-                drawRect = new Rectangle2D(newX, newY, startRect.getWidth(), startRect.getHeight());
-                
-                showFrames(frames);
+            if (draggingThread != null) {
+                draggingThread.setCurrent(new Point(event.getX(), event.getY()));
             }
         });
         canvas.setOnMouseDragReleased(event -> {
-            drag = false;
-            start = null;
-            startRect = null;
+            if (draggingThread != null) {
+                draggingThread.setValid(false);
+                draggingThread = null;
+            }
         });
         
         canvas_hld.widthProperty().addListener((observable, oldValue, newValue) -> {
-            canvas.setWidth(newValue.doubleValue());
-            
-            drawRect = new Rectangle2D(drawRect.getMinX(), drawRect.getMinY(), newValue.doubleValue(), drawRect.getHeight());
-            
-            showFrames(frames);
+            onCanvasResize(canvas_hld.getWidth(), canvas_hld.getHeight());
         });
         canvas_hld.heightProperty().addListener((observable, oldValue, newValue) -> {
-            canvas.setHeight(newValue.doubleValue());
-            
-            drawRect = new Rectangle2D(drawRect.getMinX(), drawRect.getMinY(), drawRect.getWidth(), newValue.doubleValue());
-            
-            showFrames(frames);
+            onCanvasResize(canvas_hld.getWidth(), canvas_hld.getHeight());
         });
         
-        drawRect = new Rectangle2D(0, 0, canvas.getWidth(), canvas.getHeight());
+        resetAll();
+    }
+    
+    private void onCanvasDragging(Rect startRect, Point diff) {
+        Platform.runLater(() -> {
+            double newX = startRect.getMinX() - diff.getX();
+            newX = Math.min(Math.max(range.getX(), newX), range.getZ());
+            
+            double newY = startRect.getMinY() - diff.getY();
+            newY = Math.min(Math.max(range.getY(), newY), range.getW());
+            
+            drawRect = new Rect(newX, newY, startRect.getWidth(), startRect.getHeight());
+            
+            showImpl();
+        });
+    }
+    
+    private void onCanvasResize(double width, double height) {
+        canvas.setWidth(width);
+        canvas.setHeight(height);
+        
+        drawRect = new Rect(drawRect.getMinX(), drawRect.getMinY(), width, height);
+        
+        showImpl();
     }
     
     public void setColors(String... colors) {
@@ -223,52 +219,83 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
             pane.setStyle("-fx-background-color: " + c + ";");
             pane.setOnMouseClicked(event -> {
                 mixedColor = color;
-                showImpl(index);
+                showImpl();
             });
             
             color_hld.getChildren().add(pane);
         }
     }
     
-    public void show(Object data) {
-        if (timeline != null) {
-            play_btn.setText("播放");
-            
-            timeline.stop();
-            timeline = null;
-        }
-        
-        drawRect = new Rectangle2D(0, 0, canvas.getWidth(), canvas.getHeight());
-        
-        tracks = (DisplayTracks) data;
-        frames = new DisplayFrame[tracks.tracks.size()];
-        
+    private void resetAll() {
         index = 0;
         total = 0;
         
-        timeline = new Timeline();
-        timeline.setCycleCount(Timeline.INDEFINITE);
+        width = 0;
+        height = 0;
+        
+        canvas.setWidth(canvas_hld.getWidth());
+        canvas.setHeight(canvas_hld.getHeight());
+        
+        drawRect = new Rect(0, 0, canvas.getWidth(), canvas.getHeight());
+    }
+    
+    public void show(Object data) {
+        resetAll();
+        
+        tracks = (DisplayTracks) data;
         
         setColors(tracks.colors);
         
-        int i = 0;
-        int min_layer = Integer.MAX_VALUE, max_layer = Integer.MIN_VALUE;
+        List<Element> elements = new LinkedList<>();
+        
+        int id = 0;
+        int min_layer = 0, max_layer = 0;
         for (DisplayTrack track : tracks.tracks) {
-            if (track.frames.size() > total) {
-                total = track.frames.size();
+            int size = track.frames.size();
+            if (size > total) {
+                total = size;
             }
+            
+            int i = 0;
             for (DisplayFrame frame : track.frames) {
+                elements.add(new FrameElement(++id, frame, i++, track.keep && i == size));
+                
+                if ((frame.x + frame.width) > width) {
+                    width = (frame.x + frame.width);
+                }
+                if ((frame.y + frame.height) > height) {
+                    height = (frame.y + frame.height);
+                }
+                
                 if (frame.order > max_layer) {
                     max_layer = frame.order;
                 }
                 if (frame.order < min_layer) {
                     min_layer = frame.order;
                 }
-                
-                KeyFrame keyFrame = new KeyFrame(Duration.millis(frame.time), new KeyFrameHandler(i, frame));
-                timeline.getKeyFrames().add(keyFrame);
             }
-            i++;
+        }
+        
+        Point p1 = new Point(tracks.pivotX - 200, tracks.pivotY - 200);
+        Point p2 = new Point(tracks.pivotX + 200, tracks.pivotY + 200);
+        Point p3 = new Point(
+            tracks.pivotX + width + 200 - drawRect.getWidth(),
+            tracks.pivotY + height + 200 - drawRect.getHeight()
+        );
+        range = new Vector4f(
+            Math.min(Math.min(p1.getX(), p2.getX()), p3.getX()),
+            Math.min(Math.min(p1.getY(), p2.getY()), p3.getY()),
+            Math.max(Math.max(p1.getX(), p2.getX()), p3.getX()),
+            Math.max(Math.max(p1.getY(), p2.getY()), p3.getY())
+        );
+        
+        if (tracks.drawType == ImageDrawType.FULL) {
+            map = new AoiMap((int) width, (int) height, (int) width + 1, (int) height + 1);
+        } else {
+            map = new AoiMap((int) width, (int) height, tracks.gridX, tracks.gridY);
+        }
+        for (Element element : elements) {
+            map.add(element);
         }
         
         layer_cob.setValue(DisplayLayer.NONE);
@@ -276,47 +303,43 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
         layer_sld.setMax(max_layer);
         layer_sld.setValue(min_layer);
         
+        showImpl();
+    }
+    
+    private void showImpl() {
         showImpl(index);
     }
     
     private void showImpl(int index) {
-        int i = 0;
-        for (DisplayTrack track : tracks.tracks) {
-            if (index <= track.frames.size() - 1) {
-                frames[i] = track.frames.get(index);
-            } else {
-                if (!track.frames.isEmpty() && track.keep) {
-                    frames[i] = track.frames.get(track.frames.size() - 1);
-                } else {
-                    frames[i] = null;
+        List<DisplayFrame> frames = new LinkedList<>();
+        for (Area area : map.getAreas(drawRect)) {
+            for (Element element : area.getAll()) {
+                if (element.visible()) {
+                    FrameElement frameElement = (FrameElement) element;
+                    if (frameElement.checkIndex(index)) {
+                        frames.add(frameElement.getFrame());
+                    }
                 }
             }
-            i++;
         }
+        
         showFrames(frames);
     }
     
-    private void showFrames(DisplayFrame[] frames) {
+    private void showFrames(List<DisplayFrame> frames) {
         GraphicsContext context = canvas.getGraphicsContext2D();
         context.clearRect(0, 0, drawRect.getWidth(), drawRect.getHeight());
         
-        if (frames == null || frames.length == 0) {
+        if (frames == null || frames.size() == 0) {
             return;
         }
         
         drawRect(context, 0, 0, drawRect.getWidth(), drawRect.getHeight());
         drawFrame(context, 1, 1, drawRect.getWidth() - 2, drawRect.getHeight() - 2);
         
-        List<DisplayFrame> list = new LinkedList<>();
+        frames.sort(Comparator.comparingInt(x -> x.order));
         for (DisplayFrame frame : frames) {
-            if (frame != null) {
-                list.add(frame);
-            }
-        }
-        
-        list.sort(Comparator.comparingInt(x -> x.order));
-        for (DisplayFrame frame : list) {
-            if (frame != null && layer_cob.getValue().check(frame.order, layer.getValue())) {
+            if (layer_cob.getValue().check(frame.order, layer.getValue())) {
                 showFrame(context, frame);
             }
         }
@@ -326,17 +349,22 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
     }
     
     private void showFrame(GraphicsContext context, DisplayFrame frame) {
+        Image image = createImage(frame);
+        if (image == null) {
+            return;
+        }
+        
         double sx = 0;
         double sy = 0;
-        double sw = frame.image.getWidth();
-        double sh = frame.image.getHeight();
+        double sw = frame.width;
+        double sh = frame.height;
         
-        double dx = frame.x + (frame.flipX ? frame.width : 0);
-        double dy = frame.y + (frame.flipY ? frame.height : 0);
+        double dx = tracks.pivotX + frame.x + (frame.flipX ? frame.width : 0);
+        double dy = tracks.pivotX + frame.y + (frame.flipY ? frame.height : 0);
         double dw = frame.width * (frame.flipX ? -1 : 1);
         double dh = frame.height * (frame.flipY ? -1 : 1);
         
-        Rectangle2D imageRect = new Rectangle2D(dx, dy, dw, dh);
+        Rect imageRect = new Rect(dx, dy, dw, dh);
         if (drawRect.contains(imageRect)) {
             dx -= drawRect.getMinX();
             dy -= drawRect.getMinY();
@@ -344,7 +372,7 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
             context.save();
             Rotate rotate = new Rotate(frame.rotateZ, frame.x + frame.width / 2, frame.y + frame.height / 2);
             context.setTransform(rotate.getMxx(), rotate.getMyx(), rotate.getMxy(), rotate.getMyy(), rotate.getTx(), rotate.getTy());
-            context.drawImage(createImage(frame), sx, sy, sw, sh, dx, dy, dw, dh);
+            context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
             context.restore();
             
             drawText(context, frame.extra, dx, dy);
@@ -384,7 +412,7 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
             context.save();
             Rotate rotate = new Rotate(frame.rotateZ, frame.x + frame.width / 2, frame.y + frame.height / 2);
             context.setTransform(rotate.getMxx(), rotate.getMyx(), rotate.getMxy(), rotate.getMyy(), rotate.getTx(), rotate.getTy());
-            context.drawImage(createImage(frame), sx, sy, sw, sh, dx, dy, dw, dh);
+            context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
             context.restore();
             
             drawText(context, frame.extra, dx, dy);
@@ -392,9 +420,14 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
     }
     
     private Image createImage(DisplayFrame frame) {
-        Image image = SwingFXUtils.toFXImage(frame.image, null);
+        Image image = null;
+        if (frame.image != null) {
+            image = SwingFXUtils.toFXImage(frame.image, null);
+        } else if (frame.getter != null) {
+            image = frame.getter.getImage();
+        }
         
-        if (mixedColor != null && frame.mixed) {
+        if (image != null && mixedColor != null && frame.mixed) {
             WritableImage blendImage = new WritableImage((int) frame.width, (int) frame.height);
             
             for (int i = 0; i < frame.height; ++i) {
@@ -437,21 +470,5 @@ public class ImageDisplayView extends ImageDisplayViewWrapper implements Initial
         context.setStroke(black_chk.isSelected() ? Color.WHITE : Color.BLACK);
         context.strokeLine(pivotX - 50, pivotY, pivotX + 50, pivotY);
         context.strokeLine(pivotX, pivotY - 20, pivotX, pivotY + 20);
-    }
-    
-    private class KeyFrameHandler implements EventHandler<ActionEvent> {
-        private final int i;
-        private final DisplayFrame frame;
-        
-        public KeyFrameHandler(int i, DisplayFrame frame) {
-            this.i = i;
-            this.frame = frame;
-        }
-        
-        @Override
-        public void handle(ActionEvent event) {
-            frames[i] = frame;
-            showFrames(frames);
-        }
     }
 }

@@ -24,5 +24,6 @@ public class DisplayFrame {
     
     public boolean mixed;
     public BufferedImage image;
+    public ImageGetter getter;
     public String extra;
 }

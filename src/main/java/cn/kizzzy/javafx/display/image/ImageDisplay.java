@@ -5,9 +5,6 @@ import cn.kizzzy.javafx.display.Display;
 import cn.kizzzy.javafx.display.DisplayAAA;
 import cn.kizzzy.javafx.display.DisplayAttribute;
 import cn.kizzzy.javafx.display.DisplayType;
-import cn.kizzzy.javafx.display.image.DisplayFrame;
-import cn.kizzzy.javafx.display.image.DisplayTrack;
-import cn.kizzzy.javafx.display.image.DisplayTracks;
 import cn.kizzzy.vfs.IPackage;
 
 import javax.imageio.ImageIO;
@@ -35,8 +32,8 @@ public class ImageDisplay extends Display<IPackage> {
                 BufferedImage image = ImageIO.read(new ByteArrayInputStream(data));
                 if (image != null) {
                     DisplayFrame frame = new DisplayFrame();
-                    frame.x = 200;
-                    frame.y = 200;
+                    frame.x = 0;
+                    frame.y = 0;
                     frame.width = image.getWidth();
                     frame.height = image.getHeight();
                     frame.image = image;
