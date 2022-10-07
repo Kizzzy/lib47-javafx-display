@@ -1,11 +1,23 @@
 package cn.kizzzy.javafx.display.image;
 
+import cn.kizzzy.animations.AnimationClip;
+import cn.kizzzy.animations.AnimationController;
+import cn.kizzzy.animations.AnimationCurve;
+import cn.kizzzy.animations.Animator;
+import cn.kizzzy.animations.AnimatorPlayer;
+import cn.kizzzy.animations.AnimatorUpdateType;
+import cn.kizzzy.animations.ConstTangentMode;
+import cn.kizzzy.animations.CurveBinding;
+import cn.kizzzy.animations.KeyFrame;
+import cn.kizzzy.animations.TangentMode;
 import cn.kizzzy.javafx.custom.CustomControlParamter;
 import cn.kizzzy.javafx.custom.ICustomControl;
 import cn.kizzzy.javafx.custom.LabeledSlider;
 import cn.kizzzy.javafx.display.DisplayType;
 import cn.kizzzy.javafx.display.DisplayViewAdapter;
 import cn.kizzzy.javafx.display.DisplayViewAttribute;
+import cn.kizzzy.javafx.display.image.animation.DisplayFrameProcessor;
+import cn.kizzzy.javafx.display.image.animation.LinerTangleMod;
 import cn.kizzzy.javafx.display.image.aoi.AoiMap;
 import cn.kizzzy.javafx.display.image.aoi.Area;
 import cn.kizzzy.javafx.display.image.aoi.Element;
@@ -64,6 +76,12 @@ abstract class ImageDisplayViewBase extends DisplayViewAdapter implements ICusto
     protected Button play_btn;
     
     @FXML
+    protected LabeledSlider speed_sld;
+    
+    @FXML
+    protected CheckBox loop_chk;
+    
+    @FXML
     protected HBox canvas_hld;
     
     @FXML
@@ -107,8 +125,18 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     
     private DisplayTracks tracks;
     
+    private AnimatorPlayer animatorPlayer;
+    private DisplayFrameProcessor frameProcessor;
+    
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        frameProcessor = new DisplayFrameProcessor(this::showFrames);
+        
+        Animator animator = new Animator();
+        animator.getStateInfo().before = frameProcessor::clearFrame;
+        animator.getStateInfo().after = frameProcessor::flushFrame;
+        animatorPlayer = new AnimatorPlayer(animator);
+        
         layer = new SimpleIntegerProperty();
         layer.addListener((observable, oldValue, newValue) -> {
             if (layer_cob.getValue() != DisplayLayer.NONE) {
@@ -130,22 +158,33 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         });
         
         prev_btn.setOnAction(event -> {
-            if (index > 0) {
-                --index;
-                showImpl();
-            }
+            animatorPlayer.prev();
         });
         
         next_btn.setOnAction(event -> {
-            if (index < total - 1) {
-                ++index;
-                showImpl();
-            }
+            animatorPlayer.next();
         });
         
         play_btn.setOnAction(event -> {
-            // todo
+            if (animatorPlayer.isPlaying()) {
+                animatorPlayer.stop();
+            } else {
+                animatorPlayer.start();
+            }
+            play_btn.setText(animatorPlayer.isPlaying() ? "暂停" : "播放");
+            prev_btn.setDisable(animatorPlayer.isPlaying());
+            next_btn.setDisable(animatorPlayer.isPlaying());
         });
+        
+        speed_sld.valueProperty().addListener((observable, oldValue, newValue) -> {
+            animatorPlayer.getAnimator().setSpeed(newValue.floatValue());
+        });
+        speed_sld.setValue(1);
+        
+        loop_chk.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            animatorPlayer.getAnimator().setLoop(newValue);
+        });
+        loop_chk.setSelected(true);
         
         canvas.setOnDragDetected(event -> canvas.startFullDrag());
         canvas.setOnMouseDragEntered(event -> {
@@ -178,6 +217,17 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         });
         
         resetAll();
+    }
+    
+    @Override
+    public void stop() {
+        if (animatorPlayer != null) {
+            animatorPlayer.stop();
+        }
+        
+        if (draggingThread != null) {
+            draggingThread.setValid(false);
+        }
     }
     
     private void onCanvasDragging(Rect startRect, Point diff) {
@@ -240,6 +290,12 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     }
     
     public void show(Object data) {
+        Platform.runLater(() -> {
+            showImpl(data);
+        });
+    }
+    
+    public void showImpl(Object data) {
         resetAll();
         
         tracks = (DisplayTracks) data;
@@ -298,16 +354,51 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             map.add(element);
         }
         
+        play_btn.setDisable(total <= 1);
+        play_btn.setText(animatorPlayer.isPlaying() ? "暂停" : "播放");
+        prev_btn.setDisable(total <= 1);
+        next_btn.setDisable(total <= 1);
+        
         layer_cob.setValue(DisplayLayer.NONE);
         layer_sld.setMin(min_layer);
         layer_sld.setMax(max_layer);
         layer_sld.setValue(min_layer);
         
-        showImpl();
+        initialController(tracks);
+        
+        //showImpl();
+    }
+    
+    private void initialController(DisplayTracks tracks) {
+        List<CurveBinding<DisplayFrame>> curves = new LinkedList<>();
+        
+        for (DisplayTrack track : tracks.tracks) {
+            List<KeyFrame<DisplayFrame>> frames = new LinkedList<>();
+            for (DisplayFrame frame : track.frames) {
+                KeyFrame<DisplayFrame> kf = new KeyFrame<>();
+                kf.time = (long) frame.time;
+                kf.value = frame;
+                frames.add(kf);
+            }
+            
+            TangentMode<DisplayFrame> tangentMode = track.liner ? new LinerTangleMod() : new ConstTangentMode<>();
+            
+            curves.add(new CurveBinding<>(
+                new AnimationCurve<>(frames.toArray(new KeyFrame[]{}), tangentMode),
+                frameProcessor
+            ));
+        }
+        
+        AnimationController controller = new AnimationController(new AnimationClip(
+            curves.toArray(new CurveBinding[]{})
+        ));
+        
+        animatorPlayer.getAnimator().setController(controller, true);
+        animatorPlayer.getAnimator().update(AnimatorUpdateType.TIME);
     }
     
     private void showImpl() {
-        showImpl(index);
+        //showImpl(index);
     }
     
     private void showImpl(int index) {

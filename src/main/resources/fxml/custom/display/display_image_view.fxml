@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
@@ -18,7 +19,12 @@
                 <Separator orientation="VERTICAL"/>
                 <CheckBox fx:id="filter_chk" text="去除底色"/>
                 <Separator orientation="VERTICAL"/>
-                <HBox fx:id="color_hld" minHeight="24.0" spacing="8.0" HBox.hgrow="ALWAYS"/>
+                <HBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+                    <children>
+                        <Label prefWidth="36.0" text="混合: "/>
+                        <HBox fx:id="color_hld" minHeight="24.0" spacing="8.0" HBox.hgrow="ALWAYS"/>
+                    </children>
+                </HBox>
             </HBox>
             <HBox spacing="8.0">
                 <children>
@@ -27,14 +33,16 @@
                     <LabeledSlider fx:id="layer_sld" max="10.0" min="0.0" name="层次" value="10.0"/>
                     <ChoiceBox fx:id="layer_cob"/>
                     <Separator orientation="VERTICAL"/>
-                    <HBox HBox.hgrow="ALWAYS"/>
-                    <HBox alignment="BOTTOM_RIGHT" spacing="8.0">
-                        <children>
-                            <Button fx:id="prev_btn" mnemonicParsing="false" text="上一帧"/>
-                            <Button fx:id="next_btn" mnemonicParsing="false" text="下一帧"/>
-                            <Button fx:id="play_btn" mnemonicParsing="false" text="播放"/>
-                        </children>
-                    </HBox>
+                </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="42.0" spacing="8.0">
+                <children>
+                    <Button fx:id="prev_btn" mnemonicParsing="false" prefWidth="64.0" text="上一帧"/>
+                    <Button fx:id="next_btn" mnemonicParsing="false" prefWidth="64.0" text="下一帧"/>
+                    <Separator orientation="VERTICAL"/>
+                    <Button fx:id="play_btn" mnemonicParsing="false" prefWidth="64.0" text="播放"/>
+                    <LabeledSlider fx:id="speed_sld" max="5.0" min="0.1" name="播放速度" value="0.0"/>
+                    <CheckBox fx:id="loop_chk" mnemonicParsing="false" text="循环"/>
                 </children>
             </HBox>
             <HBox fx:id="canvas_hld" VBox.vgrow="ALWAYS">

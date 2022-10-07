@@ -7,6 +7,8 @@ public class DisplayTrack {
     
     public boolean keep = true;
     
+    public boolean liner = false;
+    
     public List<DisplayFrame> frames
         = new LinkedList<>();
 }
