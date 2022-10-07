@@ -3,10 +3,13 @@ package cn.kizzzy.javafx.display.image.animation;
 import cn.kizzzy.animations.TangentMode;
 import cn.kizzzy.javafx.display.image.DisplayFrame;
 
-public class LinerTangleMod implements TangentMode<DisplayFrame> {
+public class LinerTangleMod implements TangentMode<TrackFrame> {
     
     @Override
-    public DisplayFrame lerp(DisplayFrame x, DisplayFrame y, float rate) {
+    public TrackFrame lerp(TrackFrame xtf, TrackFrame ytf, float rate) {
+        DisplayFrame x = xtf.frame;
+        DisplayFrame y = ytf.frame;
+        
         DisplayFrame frame = new DisplayFrame();
         frame.layer = x.layer;
         frame.order = x.order;
@@ -29,6 +32,6 @@ public class LinerTangleMod implements TangentMode<DisplayFrame> {
         frame.image = x.image;
         frame.getter = x.getter;
         frame.extra = x.extra;
-        return frame;
+        return new TrackFrame(xtf.element, frame);
     }
 }

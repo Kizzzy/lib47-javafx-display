@@ -9,15 +9,15 @@ import cn.kizzzy.animations.AnimatorUpdateType;
 import cn.kizzzy.animations.ConstTangentMode;
 import cn.kizzzy.animations.CurveBinding;
 import cn.kizzzy.animations.KeyFrame;
-import cn.kizzzy.animations.TangentMode;
 import cn.kizzzy.javafx.custom.CustomControlParamter;
 import cn.kizzzy.javafx.custom.ICustomControl;
 import cn.kizzzy.javafx.custom.LabeledSlider;
 import cn.kizzzy.javafx.display.DisplayType;
 import cn.kizzzy.javafx.display.DisplayViewAdapter;
 import cn.kizzzy.javafx.display.DisplayViewAttribute;
-import cn.kizzzy.javafx.display.image.animation.DisplayFrameProcessor;
 import cn.kizzzy.javafx.display.image.animation.LinerTangleMod;
+import cn.kizzzy.javafx.display.image.animation.TrackFrame;
+import cn.kizzzy.javafx.display.image.animation.TrackFrameProcessor;
 import cn.kizzzy.javafx.display.image.aoi.AoiMap;
 import cn.kizzzy.javafx.display.image.aoi.Area;
 import cn.kizzzy.javafx.display.image.aoi.Element;
@@ -92,6 +92,7 @@ abstract class ImageDisplayViewBase extends DisplayViewAdapter implements ICusto
     }
 }
 
+@SuppressWarnings("unchecked")
 @DisplayViewAttribute(type = DisplayType.SHOW_IMAGE, title = "图像")
 @CustomControlParamter(fxml = "/fxml/custom/display/display_image_view.fxml")
 public class ImageDisplayView extends ImageDisplayViewBase implements Initializable {
@@ -107,12 +108,6 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         "#ffffffff"
     };
     
-    private int index;
-    private int total;
-    
-    private float width;
-    private float height;
-    
     private Color mixedColor;
     
     private IntegerProperty layer;
@@ -126,11 +121,14 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     private DisplayTracks tracks;
     
     private AnimatorPlayer animatorPlayer;
-    private DisplayFrameProcessor frameProcessor;
+    private TrackFrameProcessor frameProcessor;
+    
+    private final List<TrackElement> elements = new LinkedList<>();
+    private List<DisplayFrame> frames = new LinkedList<>();
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        frameProcessor = new DisplayFrameProcessor(this::showFrames);
+        frameProcessor = new TrackFrameProcessor(this::showFrames);
         
         Animator animator = new Animator();
         animator.getStateInfo().before = frameProcessor::clearFrame;
@@ -240,7 +238,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             
             drawRect = new Rect(newX, newY, startRect.getWidth(), startRect.getHeight());
             
-            showImpl();
+            showImpl(true);
         });
     }
     
@@ -277,12 +275,6 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     }
     
     private void resetAll() {
-        index = 0;
-        total = 0;
-        
-        width = 0;
-        height = 0;
-        
         canvas.setWidth(canvas_hld.getWidth());
         canvas.setHeight(canvas_hld.getHeight());
         
@@ -303,8 +295,10 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         setColors(tracks.colors);
         
         List<Element> elements = new LinkedList<>();
+        List<CurveBinding<TrackFrame>> curves = new LinkedList<>();
         
-        int id = 0;
+        int id = 0, total = 0;
+        float width = 0, height = 0;
         int min_layer = 0, max_layer = 0;
         for (DisplayTrack track : tracks.tracks) {
             int size = track.frames.size();
@@ -312,9 +306,16 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
                 total = size;
             }
             
-            int i = 0;
+            TrackElement element = new TrackElement(++id, track);
+            elements.add(element);
+            
+            List<KeyFrame<TrackFrame>> kfs = new LinkedList<>();
+            
             for (DisplayFrame frame : track.frames) {
-                elements.add(new FrameElement(++id, frame, i++, track.keep && i == size));
+                KeyFrame<TrackFrame> kf = new KeyFrame<>();
+                kf.time = (long) frame.time;
+                kf.value = new TrackFrame(element, frame);
+                kfs.add(kf);
                 
                 if ((frame.x + frame.width) > width) {
                     width = (frame.x + frame.width);
@@ -330,6 +331,26 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
                     min_layer = frame.order;
                 }
             }
+            
+            curves.add(new CurveBinding<>(
+                new AnimationCurve<>(
+                    kfs.toArray(new KeyFrame[]{}),
+                    track.liner ? new LinerTangleMod() : new ConstTangentMode<>()
+                ), frameProcessor
+            ));
+        }
+        
+        animatorPlayer.getAnimator().setController(new AnimationController(new AnimationClip(
+            curves.toArray(new CurveBinding[]{})
+        )), true);
+        
+        if (tracks.drawType == ImageDrawType.FULL) {
+            map = new AoiMap((int) width, (int) height, (int) width + 1, (int) height + 1);
+        } else {
+            map = new AoiMap((int) width, (int) height, tracks.gridX, tracks.gridY);
+        }
+        for (Element element : elements) {
+            map.add(element);
         }
         
         Point p1 = new Point(tracks.pivotX - 200, tracks.pivotY - 200);
@@ -345,15 +366,6 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             Math.max(Math.max(p1.getY(), p2.getY()), p3.getY())
         );
         
-        if (tracks.drawType == ImageDrawType.FULL) {
-            map = new AoiMap((int) width, (int) height, (int) width + 1, (int) height + 1);
-        } else {
-            map = new AoiMap((int) width, (int) height, tracks.gridX, tracks.gridY);
-        }
-        for (Element element : elements) {
-            map.add(element);
-        }
-        
         play_btn.setDisable(total <= 1);
         play_btn.setText(animatorPlayer.isPlaying() ? "暂停" : "播放");
         prev_btn.setDisable(total <= 1);
@@ -364,60 +376,51 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         layer_sld.setMax(max_layer);
         layer_sld.setValue(min_layer);
         
-        initialController(tracks);
-        
-        //showImpl();
-    }
-    
-    private void initialController(DisplayTracks tracks) {
-        List<CurveBinding<DisplayFrame>> curves = new LinkedList<>();
-        
-        for (DisplayTrack track : tracks.tracks) {
-            List<KeyFrame<DisplayFrame>> frames = new LinkedList<>();
-            for (DisplayFrame frame : track.frames) {
-                KeyFrame<DisplayFrame> kf = new KeyFrame<>();
-                kf.time = (long) frame.time;
-                kf.value = frame;
-                frames.add(kf);
-            }
-            
-            TangentMode<DisplayFrame> tangentMode = track.liner ? new LinerTangleMod() : new ConstTangentMode<>();
-            
-            curves.add(new CurveBinding<>(
-                new AnimationCurve<>(frames.toArray(new KeyFrame[]{}), tangentMode),
-                frameProcessor
-            ));
-        }
-        
-        AnimationController controller = new AnimationController(new AnimationClip(
-            curves.toArray(new CurveBinding[]{})
-        ));
-        
-        animatorPlayer.getAnimator().setController(controller, true);
-        animatorPlayer.getAnimator().update(AnimatorUpdateType.TIME);
+        showImpl(true);
     }
     
     private void showImpl() {
-        //showImpl(index);
+        showImpl(false);
     }
     
-    private void showImpl(int index) {
-        List<DisplayFrame> frames = new LinkedList<>();
+    private void showImpl(boolean reset) {
+        if (map == null) {
+            return;
+        }
+        
+        if (!reset) {
+            showFrames(frames, false);
+            return;
+        }
+        
+        for (TrackElement element : elements) {
+            element.setInRange(false);
+        }
+        elements.clear();
+        
         for (Area area : map.getAreas(drawRect)) {
             for (Element element : area.getAll()) {
                 if (element.visible()) {
-                    FrameElement frameElement = (FrameElement) element;
-                    if (frameElement.checkIndex(index)) {
-                        frames.add(frameElement.getFrame());
-                    }
+                    TrackElement trackElement = (TrackElement) element;
+                    trackElement.setInRange(true);
                 }
             }
         }
         
-        showFrames(frames);
+        if (!animatorPlayer.isPlaying()) {
+            animatorPlayer.getAnimator().update(AnimatorUpdateType.NONE);
+        }
     }
     
     private void showFrames(List<DisplayFrame> frames) {
+        showFrames(frames, true);
+    }
+    
+    private void showFrames(List<DisplayFrame> frames, boolean update) {
+        if (update) {
+            this.frames = frames;
+        }
+        
         GraphicsContext context = canvas.getGraphicsContext2D();
         context.clearRect(0, 0, drawRect.getWidth(), drawRect.getHeight());
         

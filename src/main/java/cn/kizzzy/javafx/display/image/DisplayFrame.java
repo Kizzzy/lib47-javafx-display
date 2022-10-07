@@ -10,7 +10,7 @@ public class DisplayFrame {
     public float y;
     public float z;
     
-    public float time;
+    public float time = 167;
     
     public float width;
     public float height;

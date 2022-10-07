@@ -9,20 +9,23 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class DisplayFrameProcessor implements IProcessor<DisplayFrame> {
+public class TrackFrameProcessor implements IProcessor<TrackFrame> {
     
     private final Consumer<List<DisplayFrame>> consumer;
     
     private final List<DisplayFrame> frames = new LinkedList<>();
     
-    public DisplayFrameProcessor(Consumer<List<DisplayFrame>> consumer) {
+    public TrackFrameProcessor(Consumer<List<DisplayFrame>> consumer) {
         this.consumer = consumer;
     }
     
     @Override
-    public void process(StateInfo stateInfo, DisplayFrame value) {
-        synchronized (frames) {
-            frames.add(value);
+    public void process(StateInfo stateInfo, TrackFrame value) {
+        value.element.setFrame(value.frame);
+        if (value.element.isInRange()) {
+            synchronized (frames) {
+                frames.add(value.frame);
+            }
         }
     }
     
