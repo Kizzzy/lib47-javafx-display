@@ -302,15 +302,16 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         int min_layer = 0, max_layer = 0;
         for (DisplayTrack track : tracks.tracks) {
             int size = track.frames.size();
-            if (size > total) {
-                total = size;
+            if (size == 0) {
+                continue;
             }
+            
+            total = Math.max(total, size);
             
             TrackElement element = new TrackElement(++id, track);
             elements.add(element);
             
             List<KeyFrame<TrackFrame>> kfs = new LinkedList<>();
-            
             for (DisplayFrame frame : track.frames) {
                 KeyFrame<TrackFrame> kf = new KeyFrame<>();
                 kf.time = (long) frame.time;
