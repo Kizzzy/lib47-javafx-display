@@ -5,7 +5,7 @@ import java.util.List;
 
 public class DisplayTrack {
     
-    public boolean keep = true;
+    public LoopType loopType = LoopType.LOOP_EVER;
     
     public boolean liner = false;
     

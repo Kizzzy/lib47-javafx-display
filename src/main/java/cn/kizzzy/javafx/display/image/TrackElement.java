@@ -8,13 +8,20 @@ public class TrackElement implements Element {
     private final int id;
     private final DisplayTrack track;
     
+    private DisplayFrame firstFrame;
+    private DisplayFrame lastFrame;
+    
     private DisplayFrame frame;
     
     private boolean inRange;
+    private boolean valid = true;
     
     public TrackElement(int id, DisplayTrack track) {
         this.id = id;
         this.track = track;
+        
+        firstFrame = track.frames.get(0);
+        lastFrame = track.frames.get(track.frames.size() - 1);
     }
     
     @Override
@@ -63,11 +70,22 @@ public class TrackElement implements Element {
         this.inRange = inRange;
     }
     
+    public boolean isValid() {
+        return valid;
+    }
+    
+    public void setValid(boolean valid) {
+        this.valid = valid;
+    }
+    
     public DisplayFrame getFrame() {
         return frame;
     }
     
     public void setFrame(DisplayFrame frame) {
+        if (track.loopType == LoopType.ONCE_FADE && this.frame == lastFrame && frame == firstFrame) {
+            valid = false;
+        }
         this.frame = frame;
     }
 }

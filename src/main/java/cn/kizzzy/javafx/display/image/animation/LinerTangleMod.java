@@ -10,20 +10,24 @@ public class LinerTangleMod implements TangentMode<TrackFrame> {
         DisplayFrame x = xtf.frame;
         DisplayFrame y = ytf.frame;
         
+        if (x == null) {
+            return xtf;
+        }
+        
         DisplayFrame frame = new DisplayFrame();
         frame.layer = x.layer;
         frame.order = x.order;
         
-        frame.x = x.x + (y.x - x.x) / rate;
-        frame.y = x.y + (y.y - x.y) / rate;
-        frame.z = x.z + (y.z - x.z) / rate;
+        frame.x = x.x + (y.x - x.x) * rate;
+        frame.y = x.y + (y.y - x.y) * rate;
+        frame.z = x.z + (y.z - x.z) * rate;
         
-        frame.width = x.width;
-        frame.height = x.height;
+        frame.width = x.width + (y.width - x.width) * rate;
+        frame.height = x.height + (y.height - x.height) * rate;
         
-        frame.rotateX = x.rotateX + (y.rotateX - x.rotateX) / rate;
-        frame.rotateY = x.rotateY + (y.rotateY - x.rotateY) / rate;
-        frame.rotateZ = x.rotateZ + (y.rotateZ - x.rotateZ) / rate;
+        frame.rotateX = x.rotateX + (y.rotateX - x.rotateX) * rate;
+        frame.rotateY = x.rotateY + (y.rotateY - x.rotateY) * rate;
+        frame.rotateZ = x.rotateZ + (y.rotateZ - x.rotateZ) * rate;
         
         frame.flipX = x.flipX;
         frame.flipY = x.flipY;

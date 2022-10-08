@@ -22,7 +22,7 @@ public class TrackFrameProcessor implements IProcessor<TrackFrame> {
     @Override
     public void process(StateInfo stateInfo, TrackFrame value) {
         value.element.setFrame(value.frame);
-        if (value.element.isInRange()) {
+        if (value.element.isInRange() && value.element.isValid()) {
             synchronized (frames) {
                 frames.add(value.frame);
             }
