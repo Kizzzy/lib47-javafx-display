@@ -12,9 +12,7 @@ import cn.kizzzy.animations.KeyFrame;
 import cn.kizzzy.javafx.custom.CustomControlParamter;
 import cn.kizzzy.javafx.custom.ICustomControl;
 import cn.kizzzy.javafx.custom.LabeledSlider;
-import cn.kizzzy.javafx.display.DisplayType;
-import cn.kizzzy.javafx.display.DisplayViewAdapter;
-import cn.kizzzy.javafx.display.DisplayViewAttribute;
+import cn.kizzzy.javafx.display.Stoppable;
 import cn.kizzzy.javafx.display.image.animation.LinerTangleMod;
 import cn.kizzzy.javafx.display.image.animation.TrackFrame;
 import cn.kizzzy.javafx.display.image.animation.TrackFrameProcessor;
@@ -35,6 +33,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -46,7 +45,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-abstract class ImageDisplayViewBase extends DisplayViewAdapter implements ICustomControl {
+abstract class ImageDisplayViewBase extends AnchorPane implements ICustomControl {
     
     @FXML
     protected CheckBox black_chk;
@@ -61,7 +60,7 @@ abstract class ImageDisplayViewBase extends DisplayViewAdapter implements ICusto
     protected LabeledSlider scale_sld;
     
     @FXML
-    protected ChoiceBox<DisplayLayer> layer_cob;
+    protected ChoiceBox<Layer> layer_cob;
     
     @FXML
     protected LabeledSlider layer_sld;
@@ -93,9 +92,8 @@ abstract class ImageDisplayViewBase extends DisplayViewAdapter implements ICusto
 }
 
 @SuppressWarnings("unchecked")
-@DisplayViewAttribute(type = DisplayType.SHOW_IMAGE, title = "图像")
 @CustomControlParamter(fxml = "/fxml/custom/display/display_image_view.fxml")
-public class ImageDisplayView extends ImageDisplayViewBase implements Initializable {
+public class ImageDisplayView extends ImageDisplayViewBase implements Initializable, Stoppable {
     
     private static final String[] DEFAULT_COLORS = new String[]{
         "#000000ff",
@@ -118,13 +116,13 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     
     private AoiMap map;
     
-    private DisplayTracks tracks;
+    private ImageArg tracks;
     
     private AnimatorPlayer animatorPlayer;
     private TrackFrameProcessor frameProcessor;
     
     private final List<TrackElement> elements = new LinkedList<>();
-    private List<DisplayFrame> frames = new LinkedList<>();
+    private List<Frame> frames = new LinkedList<>();
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -137,7 +135,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         
         layer = new SimpleIntegerProperty();
         layer.addListener((observable, oldValue, newValue) -> {
-            if (layer_cob.getValue() != DisplayLayer.NONE) {
+            if (layer_cob.getValue() != Layer.NONE) {
                 showImpl();
             }
         });
@@ -146,7 +144,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             showImpl();
         });
         
-        layer_cob.getItems().addAll(DisplayLayer.values());
+        layer_cob.getItems().addAll(Layer.values());
         layer_cob.valueProperty().addListener((observable, oldValue, newValue) -> {
             showImpl();
         });
@@ -281,16 +279,16 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         drawRect = new Rect(0, 0, canvas.getWidth(), canvas.getHeight());
     }
     
-    public void show(Object data) {
+    public void show(ImageArg tracks) {
         Platform.runLater(() -> {
-            showImpl(data);
+            showImpl(tracks);
         });
     }
     
-    public void showImpl(Object data) {
+    public void showImpl(ImageArg data) {
         resetAll();
         
-        tracks = (DisplayTracks) data;
+        tracks = data;
         
         setColors(tracks.colors);
         
@@ -300,7 +298,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         int id = 0, total = 0;
         float width = 0, height = 0;
         int min_layer = 0, max_layer = 0;
-        for (DisplayTrack track : tracks.tracks) {
+        for (Track track : tracks.tracks) {
             int size = track.frames.size();
             if (size == 0) {
                 continue;
@@ -312,7 +310,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             elements.add(element);
             
             List<KeyFrame<TrackFrame>> kfs = new LinkedList<>();
-            for (DisplayFrame frame : track.frames) {
+            for (Frame frame : track.frames) {
                 KeyFrame<TrackFrame> kf = new KeyFrame<>();
                 kf.time = (long) frame.time;
                 kf.value = new TrackFrame(element, frame);
@@ -372,7 +370,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         prev_btn.setDisable(total <= 1);
         next_btn.setDisable(total <= 1);
         
-        layer_cob.setValue(DisplayLayer.NONE);
+        layer_cob.setValue(Layer.NONE);
         layer_sld.setMin(min_layer);
         layer_sld.setMax(max_layer);
         layer_sld.setValue(min_layer);
@@ -413,11 +411,11 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         }
     }
     
-    private void showFrames(List<DisplayFrame> frames) {
+    private void showFrames(List<Frame> frames) {
         showFrames(frames, true);
     }
     
-    private void showFrames(List<DisplayFrame> frames, boolean update) {
+    private void showFrames(List<Frame> frames, boolean update) {
         if (update) {
             this.frames = frames;
         }
@@ -433,7 +431,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         drawFrame(context, 1, 1, drawRect.getWidth() - 2, drawRect.getHeight() - 2);
         
         frames.sort(Comparator.comparingInt(x -> x.order));
-        for (DisplayFrame frame : frames) {
+        for (Frame frame : frames) {
             if (layer_cob.getValue().check(frame.order, layer.getValue())) {
                 showFrame(context, frame);
             }
@@ -443,7 +441,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         drawFrame(context, tracks.borderX, tracks.borderY, tracks.borderW, tracks.borderH);
     }
     
-    private void showFrame(GraphicsContext context, DisplayFrame frame) {
+    private void showFrame(GraphicsContext context, Frame frame) {
         Image image = createImage(frame);
         if (image == null) {
             return;
@@ -514,7 +512,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         }
     }
     
-    private Image createImage(DisplayFrame frame) {
+    private Image createImage(Frame frame) {
         Image image = null;
         if (frame.image != null) {
             image = SwingFXUtils.toFXImage(frame.image, null);

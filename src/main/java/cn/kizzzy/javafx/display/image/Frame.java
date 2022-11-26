@@ -2,7 +2,7 @@ package cn.kizzzy.javafx.display.image;
 
 import java.awt.image.BufferedImage;
 
-public class DisplayFrame {
+public class Frame {
     public int layer;
     public int order;
     

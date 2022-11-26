@@ -3,9 +3,6 @@ package cn.kizzzy.javafx.display.audio;
 import cn.kizzzy.io.IFullyReader;
 import cn.kizzzy.javafx.custom.CustomControlParamter;
 import cn.kizzzy.javafx.custom.ICustomControl;
-import cn.kizzzy.javafx.display.DisplayType;
-import cn.kizzzy.javafx.display.DisplayViewAdapter;
-import cn.kizzzy.javafx.display.DisplayViewAttribute;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -13,36 +10,39 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.AnchorPane;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-@DisplayViewAttribute(type = DisplayType.SHOW_AUDIO, title = "音效")
-@CustomControlParamter(fxml = "/fxml/custom/display/display_audio_view.fxml")
-public class AudioDisplayView extends DisplayViewAdapter implements ICustomControl, Initializable {
+abstract class AudioDisplayViewBase extends AnchorPane implements ICustomControl, Initializable {
     
     @FXML
-    private ListView<AudioArg> playlist;
+    protected ListView<AudioArg> playlist;
     
     @FXML
-    private ProgressBar progress_pgb;
+    protected ProgressBar progress_pgb;
     
     @FXML
-    private Button prev_btn;
+    protected Button prev_btn;
     
     @FXML
-    private Button play_btn;
+    protected Button play_btn;
     
     @FXML
-    private Button next_btn;
+    protected Button next_btn;
     
-    private int index;
-    
-    public AudioDisplayView() {
+    public AudioDisplayViewBase() {
         this.init();
     }
+}
+
+@CustomControlParamter(fxml = "/fxml/custom/display/display_audio_view.fxml")
+public class AudioDisplayView extends AudioDisplayViewBase implements Initializable {
+    
+    private int index;
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -57,8 +57,7 @@ public class AudioDisplayView extends DisplayViewAdapter implements ICustomContr
         });
     }
     
-    public void show(Object data) {
-        AudioArg audioArg = (AudioArg) data;
+    public void show(AudioArg audioArg) {
         if (playlist.getItems().size() >= 10) {
             playlist.getItems().remove(0);
         }

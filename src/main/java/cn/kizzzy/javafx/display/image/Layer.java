@@ -1,6 +1,6 @@
 package cn.kizzzy.javafx.display.image;
 
-public enum DisplayLayer {
+public enum Layer {
     NONE("无", (l, r) -> true),
     EQUAL("等于", (l, r) -> l == r),
     NOT_EQUAL("不等于", (l, r) -> l != r),
@@ -18,7 +18,7 @@ public enum DisplayLayer {
     
     private Callback callback;
     
-    DisplayLayer(String desc, Callback func) {
+    Layer(String desc, Callback func) {
         this.desc = desc;
         this.callback = func;
     }

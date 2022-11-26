@@ -6,17 +6,17 @@ import cn.kizzzy.javafx.display.image.aoi.Vector3;
 public class TrackElement implements Element {
     
     private final int id;
-    private final DisplayTrack track;
+    private final Track track;
     
-    private DisplayFrame firstFrame;
-    private DisplayFrame lastFrame;
+    private Frame firstFrame;
+    private Frame lastFrame;
     
-    private DisplayFrame frame;
+    private Frame frame;
     
     private boolean inRange;
     private boolean valid = true;
     
-    public TrackElement(int id, DisplayTrack track) {
+    public TrackElement(int id, Track track) {
         this.id = id;
         this.track = track;
         
@@ -78,11 +78,11 @@ public class TrackElement implements Element {
         this.valid = valid;
     }
     
-    public DisplayFrame getFrame() {
+    public Frame getFrame() {
         return frame;
     }
     
-    public void setFrame(DisplayFrame frame) {
+    public void setFrame(Frame frame) {
         if (track.loopType == LoopType.ONCE_FADE && this.frame == lastFrame && frame == firstFrame) {
             valid = false;
         }

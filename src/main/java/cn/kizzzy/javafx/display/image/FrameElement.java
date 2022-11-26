@@ -8,9 +8,9 @@ public class FrameElement implements Element {
     private final int id;
     private final int frameIndex;
     private final boolean keep;
-    private final DisplayFrame frame;
+    private final Frame frame;
     
-    public FrameElement(int id, DisplayFrame frame, int frameIndex, boolean keep) {
+    public FrameElement(int id, Frame frame, int frameIndex, boolean keep) {
         this.id = id;
         this.frame = frame;
         this.frameIndex = frameIndex;
@@ -52,7 +52,7 @@ public class FrameElement implements Element {
     
     }
     
-    public DisplayFrame getFrame() {
+    public Frame getFrame() {
         return frame;
     }
     

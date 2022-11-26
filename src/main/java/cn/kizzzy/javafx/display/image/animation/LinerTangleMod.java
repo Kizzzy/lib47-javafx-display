@@ -1,20 +1,20 @@
 package cn.kizzzy.javafx.display.image.animation;
 
 import cn.kizzzy.animations.TangentMode;
-import cn.kizzzy.javafx.display.image.DisplayFrame;
+import cn.kizzzy.javafx.display.image.Frame;
 
 public class LinerTangleMod implements TangentMode<TrackFrame> {
     
     @Override
     public TrackFrame lerp(TrackFrame xtf, TrackFrame ytf, float rate) {
-        DisplayFrame x = xtf.frame;
-        DisplayFrame y = ytf.frame;
+        Frame x = xtf.frame;
+        Frame y = ytf.frame;
         
         if (x == null) {
             return xtf;
         }
         
-        DisplayFrame frame = new DisplayFrame();
+        Frame frame = new Frame();
         frame.layer = x.layer;
         frame.order = x.order;
         

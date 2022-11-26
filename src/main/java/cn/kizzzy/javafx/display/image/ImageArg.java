@@ -3,7 +3,7 @@ package cn.kizzzy.javafx.display.image;
 import java.util.LinkedList;
 import java.util.List;
 
-public class DisplayTracks {
+public class ImageArg {
     
     public float pivotX = 200;
     public float pivotY = 200;
@@ -26,6 +26,6 @@ public class DisplayTracks {
     
     public String[] colors;
     
-    public List<DisplayTrack> tracks
+    public List<Track> tracks
         = new LinkedList<>();
 }

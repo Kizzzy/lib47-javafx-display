@@ -1,14 +1,12 @@
 package cn.kizzzy.javafx.display.audio;
 
 import cn.kizzzy.helper.LogHelper;
-import cn.kizzzy.javafx.display.Display;
-import cn.kizzzy.javafx.display.DisplayAAA;
-import cn.kizzzy.javafx.display.DisplayAttribute;
-import cn.kizzzy.javafx.display.DisplayType;
+import cn.kizzzy.javafx.display.DisplayLoaderAttribute;
 import cn.kizzzy.vfs.IInputStreamGetter;
 import cn.kizzzy.vfs.IPackage;
+import cn.kizzzy.vfs.tree.Leaf;
 
-@DisplayAttribute(suffix = {
+@DisplayLoaderAttribute(suffix = {
     "aiff",
     "ape",
     "au",
@@ -19,22 +17,18 @@ import cn.kizzzy.vfs.IPackage;
     "spx",
     "wav",
 })
-public class AudioDisplay extends Display<IPackage> {
-    
-    public AudioDisplay(IPackage context, String path) {
-        super(context, path);
-    }
+public class AudioDisplay implements AudioDisplayLoader {
     
     @Override
-    public DisplayAAA load() {
+    public AudioArg loadAudio(IPackage vfs, Leaf leaf) throws Exception {
         try {
-            IInputStreamGetter streamGetter = context.getInputStreamGetter(path);
+            IInputStreamGetter streamGetter = vfs.getInputStreamGetter(leaf.path);
             if (streamGetter != null) {
-                return new DisplayAAA(DisplayType.SHOW_AUDIO, new AudioArg(
-                    path,
+                return new AudioArg(
+                    leaf.path,
                     true,
                     streamGetter
-                ));
+                );
             }
         } catch (Exception e) {
             LogHelper.error("init failed: ", e);

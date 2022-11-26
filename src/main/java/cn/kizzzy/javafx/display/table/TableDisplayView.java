@@ -6,9 +6,6 @@ import cn.kizzzy.helper.StringHelper;
 import cn.kizzzy.javafx.custom.CustomControlParamter;
 import cn.kizzzy.javafx.custom.ICustomControl;
 import cn.kizzzy.javafx.custom.LabeledTextField;
-import cn.kizzzy.javafx.display.DisplayType;
-import cn.kizzzy.javafx.display.DisplayViewAdapter;
-import cn.kizzzy.javafx.display.DisplayViewAttribute;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -22,43 +19,46 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.layout.AnchorPane;
 
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.ResourceBundle;
 
-@SuppressWarnings("unchecked")
-@DisplayViewAttribute(type = DisplayType.SHOW_TABLE, title = "表格")
-@CustomControlParamter(fxml = "/fxml/custom/display/display_table_view.fxml")
-public class TableDisplayView extends DisplayViewAdapter implements ICustomControl, Initializable {
+abstract class TableDisplayViewBase extends AnchorPane implements ICustomControl {
     
     @FXML
-    private LabeledTextField fileNameTbf;
+    protected LabeledTextField fileNameTbf;
     
     @FXML
-    private CheckBox filterToggle;
+    protected CheckBox filterToggle;
     
     @FXML
-    private LabeledTextField filterColumn;
+    protected LabeledTextField filterColumn;
     
     @FXML
-    private LabeledTextField filterString;
+    protected LabeledTextField filterString;
     
     @FXML
-    private Button filterButton;
+    protected Button filterButton;
     
     @FXML
-    private TableView<String[]> tbv;
+    protected TableView<String[]> tbv;
     
     @FXML
-    private Label info;
+    protected Label info;
     
-    private FilteredList<String[]> filteredList;
-    
-    public TableDisplayView() {
+    public TableDisplayViewBase() {
         this.init();
     }
+}
+
+@SuppressWarnings("unchecked")
+@CustomControlParamter(fxml = "/fxml/custom/display/display_table_view.fxml")
+public class TableDisplayView extends TableDisplayViewBase implements Initializable {
+    
+    protected FilteredList<String[]> filteredList;
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -74,8 +74,8 @@ public class TableDisplayView extends DisplayViewAdapter implements ICustomContr
         filterButton.setOnAction(this::doFilter);
     }
     
-    public void show(Object data) {
-        TableFile<String[]> pkgTxtFile = (TableFile<String[]>) data;
+    public void show(TableArg args) {
+        TableFile<String[]> pkgTxtFile = args.tableFile;
         
         tbv.getColumns().clear();
         
@@ -104,7 +104,7 @@ public class TableDisplayView extends DisplayViewAdapter implements ICustomContr
     }
     
     @FXML
-    private void doFilter(ActionEvent event) {
+    protected void doFilter(ActionEvent event) {
         if (!filterToggle.isSelected()) {
             filteredList.setPredicate(null);
             return;

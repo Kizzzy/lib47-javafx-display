@@ -4,45 +4,42 @@ import cn.kizzzy.helper.StringHelper;
 import cn.kizzzy.javafx.custom.CustomControlParamter;
 import cn.kizzzy.javafx.custom.ICustomControl;
 import cn.kizzzy.javafx.custom.LabeledTextField;
-import cn.kizzzy.javafx.display.DisplayType;
-import cn.kizzzy.javafx.display.DisplayViewAdapter;
-import cn.kizzzy.javafx.display.DisplayViewAttribute;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.AnchorPane;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 
-@SuppressWarnings("unchecked")
-@DisplayViewAttribute(type = DisplayType.SHOW_TEXT, title = "文本")
-@CustomControlParamter(fxml = "/fxml/custom/display/display_text_view.fxml")
-public class TextDisplayView extends DisplayViewAdapter implements ICustomControl, Initializable {
+abstract class TextDisplayViewBase extends AnchorPane implements ICustomControl {
     
     @FXML
-    private LabeledTextField filterText;
+    protected LabeledTextField filterText;
     
     @FXML
-    private Button filterButton;
+    protected Button filterButton;
     
     @FXML
-    private TextArea textArea;
+    protected TextArea textArea;
     
-    public TextDisplayView() {
+    public TextDisplayViewBase() {
         this.init();
     }
+}
+
+@CustomControlParamter(fxml = "/fxml/custom/display/display_text_view.fxml")
+public class TextDisplayView extends TextDisplayViewBase implements Initializable {
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         filterButton.setOnAction(this::doFilter);
     }
     
-    public void show(Object data) {
-        String text = (String) data;
-        
-        textArea.setText(text);
+    public void show(TextArg args) {
+        textArea.setText(args.text);
     }
     
     @FXML
