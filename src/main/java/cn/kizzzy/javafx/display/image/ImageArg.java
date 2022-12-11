@@ -21,6 +21,8 @@ public class ImageArg {
     
     public boolean loop;
     
+    public int cacheSize;
+    
     public ImageDrawType drawType
         = ImageDrawType.FULL;
     

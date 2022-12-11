@@ -1,10 +1,16 @@
 package cn.kizzzy.javafx.display.image.getter;
 
+import cn.kizzzy.javafx.display.image.Frame;
+import cn.kizzzy.javafx.display.image.FrameElement;
+import cn.kizzzy.javafx.display.image.aoi.Element;
+
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
-public class SliceImageGetter<Image> implements IImageGetter<Image> {
+public class SliceImageGetter implements IImageGetter<Element> {
     
     private final BufferedImage bufferedImage;
     
@@ -16,6 +22,9 @@ public class SliceImageGetter<Image> implements IImageGetter<Image> {
     
     private final int countY;
     
+    private Map<Integer, Element> elementKvs
+        = new HashMap<>();
+    
     public SliceImageGetter(BufferedImage bufferedImage, int blockX, int blockY) {
         this.bufferedImage = bufferedImage;
         this.blockX = blockX;
@@ -25,42 +34,50 @@ public class SliceImageGetter<Image> implements IImageGetter<Image> {
     }
     
     @Override
-    public List<Image> getImage(double x, double y, double width, double height) {
+    public List<Element> getImage(double x, double y, double width, double height) {
         int minX = (int) Math.floor(x / blockX);
         int minY = (int) Math.floor(y / blockY);
         
         int maxX = (int) Math.ceil((x + width) / blockX);
         int maxY = (int) Math.ceil((y + height) / blockY);
         
-        final List<Image> images = new LinkedList<>();
+        final List<Element> images = new LinkedList<>();
         
         for (int i = minX; i < maxX; ++i) {
             for (int j = minY; j < maxY; ++j) {
-                /*Image _image = imageKvs.get(id(i, j));
+                
+                Element _image = elementKvs.get(id(i, j));
                 if (_image == null) {
                     int sx = i * blockX;
                     int sy = j * blockY;
-                    int sw = Math.min(blockX, getWidth() - sx);
-                    int sh = Math.min(blockY, getHeight() - sy);
+                    int sw = Math.min(blockX, bufferedImage.getWidth() - sx);
+                    int sh = Math.min(blockY, bufferedImage.getHeight() - sy);
                     
                     BufferedImage subImage = bufferedImage.getSubimage(sx, sy, sw, sh);
                     if (subImage != null) {
-                        _image = new Image(
-                            id(i, j),
-                            SwingFXUtils.toFXImage(subImage, null),
-                            new Rect(sx, sy, sw, sh)
-                        );
-                        imageKvs.put(id(i, j), _image);
+                        Frame frame = new Frame();
+                        frame.x = sx;
+                        frame.y = sy;
+                        frame.width = sw;
+                        frame.height = sh;
+                        frame.image = subImage;
+                        
+                        _image = new FrameElement(id(i, j), frame, 0, true);
+                        elementKvs.put(id(i, j), _image);
                     }
                 }
                 
                 if (_image != null) {
                     images.add(_image);
-                }*/
+                }
             }
         }
         
         return images;
+    }
+    
+    private int id(int x, int y) {
+        return y * blockX + x;
     }
     
     public BufferedImage getBufferedImage() {

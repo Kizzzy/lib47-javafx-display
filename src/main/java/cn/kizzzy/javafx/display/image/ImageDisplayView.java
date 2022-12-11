@@ -17,9 +17,10 @@ import cn.kizzzy.javafx.display.image.animation.LinerTangleMod;
 import cn.kizzzy.javafx.display.image.animation.TrackFrame;
 import cn.kizzzy.javafx.display.image.animation.TrackFrameProcessor;
 import cn.kizzzy.javafx.display.image.aoi.AoiMap;
-import cn.kizzzy.javafx.display.image.aoi.Area;
 import cn.kizzzy.javafx.display.image.aoi.Element;
 import cn.kizzzy.javafx.display.image.aoi.Vector4f;
+import cn.kizzzy.javafx.display.image.getter.AoiImageGetter;
+import cn.kizzzy.javafx.display.image.getter.IImageGetter;
 import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -41,8 +42,10 @@ import javafx.scene.transform.Rotate;
 
 import java.net.URL;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 abstract class ImageDisplayViewBase extends AnchorPane implements ICustomControl {
@@ -115,14 +118,16 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     private CanvasDraggingThread draggingThread;
     
     private AoiMap map;
-    
-    private ImageArg tracks;
+    private IImageGetter<Element> imageGetter;
     
     private AnimatorPlayer animatorPlayer;
     private TrackFrameProcessor frameProcessor;
     
     private final List<TrackElement> elements = new LinkedList<>();
     private List<Frame> frames = new LinkedList<>();
+    
+    private ImageArg arg;
+    private Map<Frame, Image> imageKvs;
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -273,6 +278,8 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     }
     
     private void resetAll() {
+        imageKvs = null;
+        
         canvas.setWidth(canvas_hld.getWidth());
         canvas.setHeight(canvas_hld.getHeight());
         
@@ -285,12 +292,12 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         });
     }
     
-    public void showImpl(ImageArg data) {
+    public void showImpl(ImageArg arg) {
         resetAll();
         
-        tracks = data;
+        this.arg = arg;
         
-        setColors(tracks.colors);
+        setColors(this.arg.colors);
         
         List<Element> elements = new LinkedList<>();
         List<CurveBinding<TrackFrame>> curves = new LinkedList<>();
@@ -298,7 +305,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         int id = 0, total = 0;
         float width = 0, height = 0;
         int min_layer = 0, max_layer = 0;
-        for (Track track : tracks.tracks) {
+        for (Track track : this.arg.tracks) {
             int size = track.frames.size();
             if (size == 0) {
                 continue;
@@ -323,11 +330,11 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
                     height = (frame.y + frame.height);
                 }
                 
-                if (frame.order > max_layer) {
-                    max_layer = frame.order;
+                if (frame.layer > max_layer) {
+                    max_layer = frame.layer;
                 }
-                if (frame.order < min_layer) {
-                    min_layer = frame.order;
+                if (frame.layer < min_layer) {
+                    min_layer = frame.layer;
                 }
             }
             
@@ -343,20 +350,21 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             curves.toArray(new CurveBinding[]{})
         )), true);
         
-        if (tracks.drawType == ImageDrawType.FULL) {
+        if (this.arg.drawType == ImageDrawType.FULL) {
             map = new AoiMap((int) width, (int) height, (int) width + 1, (int) height + 1);
         } else {
-            map = new AoiMap((int) width, (int) height, tracks.gridX, tracks.gridY);
+            map = new AoiMap((int) width, (int) height, this.arg.gridX, this.arg.gridY);
         }
         for (Element element : elements) {
             map.add(element);
         }
+        imageGetter = new AoiImageGetter(map);
         
-        Point p1 = new Point(tracks.pivotX - 200, tracks.pivotY - 200);
-        Point p2 = new Point(tracks.pivotX + 200, tracks.pivotY + 200);
+        Point p1 = new Point(this.arg.pivotX - 200, this.arg.pivotY - 200);
+        Point p2 = new Point(this.arg.pivotX + 200, this.arg.pivotY + 200);
         Point p3 = new Point(
-            tracks.pivotX + width + 200 - drawRect.getWidth(),
-            tracks.pivotY + height + 200 - drawRect.getHeight()
+            this.arg.pivotX + width + 200 - drawRect.getWidth(),
+            this.arg.pivotY + height + 200 - drawRect.getHeight()
         );
         range = new Vector4f(
             Math.min(Math.min(p1.getX(), p2.getX()), p3.getX()),
@@ -397,12 +405,13 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         }
         elements.clear();
         
-        for (Area area : map.getAreas(drawRect)) {
-            for (Element element : area.getAll()) {
-                if (element.visible()) {
-                    TrackElement trackElement = (TrackElement) element;
-                    trackElement.setInRange(true);
-                }
+        for (Element element : imageGetter.getImage(drawRect.getX(), drawRect.getY(),
+            drawRect.getWidth(), drawRect.getHeight())) {
+            if (element.visible()) {
+                TrackElement trackElement = (TrackElement) element;
+                trackElement.setInRange(true);
+                
+                elements.add(trackElement);
             }
         }
         
@@ -432,13 +441,13 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         
         frames.sort(Comparator.comparingInt(x -> x.order));
         for (Frame frame : frames) {
-            if (layer_cob.getValue().check(frame.order, layer.getValue())) {
+            if (layer_cob.getValue().check(frame.layer, layer.getValue())) {
                 showFrame(context, frame);
             }
         }
         
-        drawPivot(context, tracks.pivotX, tracks.pivotY);
-        drawFrame(context, tracks.borderX, tracks.borderY, tracks.borderW, tracks.borderH);
+        drawPivot(context, arg.pivotX, arg.pivotY);
+        drawFrame(context, arg.borderX, arg.borderY, arg.borderW, arg.borderH);
     }
     
     private void showFrame(GraphicsContext context, Frame frame) {
@@ -452,8 +461,8 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         double sw = frame.width;
         double sh = frame.height;
         
-        double dx = tracks.pivotX + frame.x + (frame.flipX ? frame.width : 0);
-        double dy = tracks.pivotX + frame.y + (frame.flipY ? frame.height : 0);
+        double dx = arg.pivotX + frame.x + (frame.flipX ? frame.width : 0);
+        double dy = arg.pivotX + frame.y + (frame.flipY ? frame.height : 0);
         double dw = frame.width * (frame.flipX ? -1 : 1);
         double dh = frame.height * (frame.flipY ? -1 : 1);
         
@@ -513,11 +522,25 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     }
     
     private Image createImage(Frame frame) {
-        Image image = null;
-        if (frame.image != null) {
-            image = SwingFXUtils.toFXImage(frame.image, null);
-        } else if (frame.getter != null) {
-            image = frame.getter.getImage();
+        if (imageKvs == null && arg.cacheSize > 0) {
+            imageKvs = new LinkedHashMap<Frame, Image>() {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry eldest) {
+                    return size() > arg.cacheSize;
+                }
+            };
+        }
+        
+        Image image = imageKvs != null ? imageKvs.get(frame) : null;
+        if (image == null) {
+            if (frame.image != null) {
+                image = SwingFXUtils.toFXImage(frame.image, null);
+            } else if (frame.getter != null) {
+                image = frame.getter.getImage();
+            }
+            if (image != null && imageKvs != null) {
+                imageKvs.put(frame, image);
+            }
         }
         
         if (image != null && mixedColor != null && frame.mixed) {
