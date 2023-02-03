@@ -1,0 +1,44 @@
+.list-view {
+    -fx-padding: 0;
+
+    -fx-background-color: #272623;
+    -fx-background-insets: 0, 0 0 0 0;
+    -fx-background-radius: 0 0 0 0;
+}
+
+.list-view .scroll-pane {
+	-fx-hbar-policy: never;
+	-fx-vbar-policy: never;
+
+    -fx-background-color: transparent;
+    -fx-background-insets: 0, 0 0 0 0;
+    -fx-background-radius: 0 0 0 0;
+}
+
+.list-view .scroll-pane .content {
+    -fx-background-color: #272623;
+    -fx-background-insets: 0, 0 0 0 0;
+    -fx-background-radius: 0 0 0 0;
+}
+
+.list-view .scroll-bar:vertical,
+.list-view .scroll-bar:horizontal{
+    -fx-pref-width: 0;
+}
+
+.list-cell {
+    -fx-padding: 4px 0px;
+
+    -fx-text-fill: #969696;
+
+    -fx-font-family: "Droid Sans Mono";
+    -fx-font-size: 20px;
+
+    -fx-background-color: #272623;
+    -fx-background-insets: 0, 0 0 0 0;
+    -fx-background-radius: 0 0 0 0;
+}
+
+.list-cell:selected {
+    -fx-text-fill: #d3d3d3;
+}

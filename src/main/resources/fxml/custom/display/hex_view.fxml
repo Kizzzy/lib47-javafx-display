@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollBar?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import java.net.URL?>
+<fx:root type="AnchorPane" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1">
+    <HBox styleClass="h-box" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+          AnchorPane.topAnchor="0.0">
+        <ListView fx:id="line_number_lsv" maxWidth="128.0" minWidth="128.0" prefWidth="128.0"/>
+        <TextArea fx:id="hex_view_txa" maxWidth="480.0" minWidth="480.0" prefWidth="480.0"/>
+        <TextArea fx:id="ascii_view_txa" maxWidth="225.0" minWidth="225.0" prefWidth="225.0"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <ScrollBar fx:id="progress_slb" orientation="VERTICAL"/>
+    </HBox>
+
+    <stylesheets>
+        <URL value="@hex/hex-view.css"/>
+        <URL value="@hex/list-view.css"/>
+        <URL value="@hex/table-view.css"/>
+    </stylesheets>
+</fx:root>

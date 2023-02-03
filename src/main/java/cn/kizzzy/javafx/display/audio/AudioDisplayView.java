@@ -17,7 +17,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-abstract class AudioDisplayViewBase extends AnchorPane implements ICustomControl, Initializable {
+abstract class AudioDisplayViewBase extends AnchorPane implements ICustomControl {
     
     @FXML
     protected ListView<AudioArg> playlist;

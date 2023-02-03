@@ -1,0 +1,36 @@
+.text-area {
+    -fx-text-fill: #d5d5d5;
+
+    -fx-font-family: "Droid Sans Mono";
+    -fx-font-size: 20px;
+    -fx-font-color: grey;
+
+    -fx-background-color: #272623;
+    -fx-background-insets: 0, 0 0 0 0;
+    -fx-background-radius: 0 0 0 0;
+}
+
+.text-area .text {
+    -fx-line-spacing: 8px;
+}
+
+.text-area .scroll-pane {
+	-fx-hbar-policy: never;
+	-fx-vbar-policy: never;
+
+    -fx-background-color: transparent;
+    -fx-background-insets: 0, 0 0 0 0;
+    -fx-background-radius: 0 0 0 0;
+}
+
+.text-area .scroll-pane .content {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0, 0 0 0 0;
+    -fx-background-radius: 0 0 0 0;
+}
+
+.text-area .scroll-pane .viewport {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0, 0 0 0 0;
+    -fx-background-radius: 0 0 0 0;
+}
