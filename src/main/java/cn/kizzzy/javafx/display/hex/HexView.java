@@ -59,13 +59,9 @@ public class HexView extends HexViewBase implements Initializable {
                 return;
             }
             
-            try {
-                int totalLine = arg.length() / line_size;
-                int position = (int) (newValue.doubleValue() / 100 * totalLine);
-                property.set(position * line_size);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            int totalLine = arg.length() / line_size;
+            int position = (int) (newValue.doubleValue() / 100 * totalLine);
+            property.set(position * line_size);
         }));
         
         hex_view_txa.heightProperty().addListener(((observable, oldValue, newValue) -> {
@@ -75,9 +71,8 @@ public class HexView extends HexViewBase implements Initializable {
     }
     
     public void show(HexArg arg) {
-        this.arg = arg;
-        
         reset();
+        this.arg = arg;
         showImpl();
     }
     
@@ -94,40 +89,35 @@ public class HexView extends HexViewBase implements Initializable {
             return;
         }
         
-        try {
-            int end = Math.min(start + line_size * line, arg.length());
-            
-            line_number_lsv.getItems().clear();
-            for (int addr = start; addr < end; addr += line_size) {
-                line_number_lsv.getItems().add(String.format("%08Xh", addr));
-            }
-            
-            StringBuilder hexBuilder = new StringBuilder();
-            StringBuilder asciiBuilder = new StringBuilder();
-            
-            byte[] data = arg.getData(start, end - start);
-            for (int i = start; i < end; ++i) {
-                byte value = data[i - start];
-                hexBuilder.append(String.format("%02X", value));
-                
-                if (Character.isISOControl(value)) {
-                    asciiBuilder.append(".");
-                } else {
-                    asciiBuilder.append((char) value);
-                }
-                
-                if (i != end - 1) {
-                    hexBuilder.append(" ");
-                }
-                if ((i + 1) % line_size == 0) {
-                    hexBuilder.append("\r\n");
-                    asciiBuilder.append("\r\n");
-                }
-            }
-            hex_view_txa.setText(hexBuilder.toString());
-            ascii_view_txa.setText(asciiBuilder.toString());
-        } catch (Exception e) {
-            e.printStackTrace();
+        int end = Math.min(start + line_size * line, arg.length());
+        byte[] data = arg.getData(start, end - start);
+        if (data == null) {
+            return;
         }
+        
+        line_number_lsv.getItems().clear();
+        for (int addr = start; addr < end; addr += line_size) {
+            line_number_lsv.getItems().add(String.format("%08Xh", addr));
+        }
+        
+        StringBuilder hexBuilder = new StringBuilder();
+        StringBuilder asciiBuilder = new StringBuilder();
+        
+        for (int i = start; i < end; ++i) {
+            byte value = data[i - start];
+            hexBuilder.append(String.format("%02X", value));
+            
+            asciiBuilder.append((32 <= value && value < 127) ? (char) value : ".");
+            
+            if (i != end - 1) {
+                hexBuilder.append(" ");
+            }
+            if ((i + 1) % line_size == 0) {
+                hexBuilder.append("\r\n");
+                asciiBuilder.append("\r\n");
+            }
+        }
+        hex_view_txa.setText(hexBuilder.toString());
+        ascii_view_txa.setText(asciiBuilder.toString());
     }
 }
