@@ -46,6 +46,12 @@ public class AudioPlayer implements IAudioPlayer, LineListener {
                     final byte[] buffer = new byte[4096];
                     for (int n = 0; n != -1 && audioClip != null; n = stream1.read(buffer, 0, buffer.length)) {
                         audioClip.write(buffer, 0, n);
+                        if (listener != null) {
+                            listener.onProgress(
+                                audioClip.getMicrosecondPosition(),
+                                (long) (buffer.length / format.getFrameSize() * format.getFrameRate())
+                            );
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
