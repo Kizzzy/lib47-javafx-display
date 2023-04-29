@@ -16,7 +16,7 @@ import java.io.InputStream;
 
 import static javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED;
 
-public class AudioPlayer implements IAudioPlayer, LineListener {
+public class JavaxAudioPlayer implements IAudioPlayer, LineListener {
     
     private volatile SourceDataLine audioClip;
     
@@ -46,12 +46,6 @@ public class AudioPlayer implements IAudioPlayer, LineListener {
                     final byte[] buffer = new byte[4096];
                     for (int n = 0; n != -1 && audioClip != null; n = stream1.read(buffer, 0, buffer.length)) {
                         audioClip.write(buffer, 0, n);
-                        if (listener != null) {
-                            listener.onProgress(
-                                audioClip.getMicrosecondPosition(),
-                                (long) (buffer.length / format.getFrameSize() * format.getFrameRate())
-                            );
-                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -81,7 +75,7 @@ public class AudioPlayer implements IAudioPlayer, LineListener {
     
     @Override
     public void pause() {
-    
+        stop();
     }
     
     @Override
@@ -97,6 +91,11 @@ public class AudioPlayer implements IAudioPlayer, LineListener {
             audioClip.removeLineListener(this);
             audioClip = null;
         }
+    }
+    
+    @Override
+    public void terminate() {
+        stop();
     }
     
     @Override

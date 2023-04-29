@@ -50,10 +50,10 @@ public class AudioDisplayView extends AudioDisplayViewBase implements Initializa
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        player = new AudioPlayer();
+        player = new Goxr3plusAudioPlayer();
         player.addListener((curr, total) -> {
             Platform.runLater(() -> {
-                progress_pgb.setProgress(curr * 1f / total);
+                progress_pgb.setProgress(curr / total);
             });
         });
         
@@ -70,7 +70,7 @@ public class AudioDisplayView extends AudioDisplayViewBase implements Initializa
     
     @Override
     public void stop() {
-        player.stop();
+        player.terminate();
     }
     
     public void show(AudioArg audioArg) {
@@ -92,9 +92,9 @@ public class AudioDisplayView extends AudioDisplayViewBase implements Initializa
     
     private void doPlay(ActionEvent actionEvent) {
         if (player.isPlaying()) {
-            player.stop();
+            player.pause();
         } else {
-            playImpl(index);
+            player.resume();
         }
     }
     

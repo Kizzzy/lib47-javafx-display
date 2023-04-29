@@ -14,12 +14,14 @@ public interface IAudioPlayer {
     
     void stop();
     
+    void terminate();
+    
     boolean isPlaying();
     
     void addListener(IProgressListener listener);
     
     interface IProgressListener {
         
-        void onProgress(long curr, long total);
+        void onProgress(double curr, double total);
     }
 }
