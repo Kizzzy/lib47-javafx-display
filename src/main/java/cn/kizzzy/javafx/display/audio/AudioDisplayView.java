@@ -3,6 +3,8 @@ package cn.kizzzy.javafx.display.audio;
 import cn.kizzzy.io.IFullyReader;
 import cn.kizzzy.javafx.custom.CustomControlParamter;
 import cn.kizzzy.javafx.custom.ICustomControl;
+import cn.kizzzy.javafx.display.Stoppable;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -40,12 +42,21 @@ abstract class AudioDisplayViewBase extends AnchorPane implements ICustomControl
 }
 
 @CustomControlParamter(fxml = "/fxml/custom/display/display_audio_view.fxml")
-public class AudioDisplayView extends AudioDisplayViewBase implements Initializable {
+public class AudioDisplayView extends AudioDisplayViewBase implements Initializable, Stoppable {
     
     private int index;
     
+    private IAudioPlayer player;
+    
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        player = new AudioPlayer();
+        player.addListener((curr, total) -> {
+            Platform.runLater(() -> {
+                progress_pgb.setProgress(curr * 1f / total);
+            });
+        });
+        
         prev_btn.setOnAction(this::doPrev);
         play_btn.setOnAction(this::doPlay);
         next_btn.setOnAction(this::doNext);
@@ -55,6 +66,11 @@ public class AudioDisplayView extends AudioDisplayViewBase implements Initializa
                 playImpl(playlist.getSelectionModel().getSelectedIndex());
             }
         });
+    }
+    
+    @Override
+    public void stop() {
+        player.stop();
     }
     
     public void show(AudioArg audioArg) {
@@ -75,7 +91,11 @@ public class AudioDisplayView extends AudioDisplayViewBase implements Initializa
     }
     
     private void doPlay(ActionEvent actionEvent) {
-        playImpl(index);
+        if (player.isPlaying()) {
+            player.stop();
+        } else {
+            playImpl(index);
+        }
     }
     
     private void doNext(ActionEvent actionEvent) {
@@ -87,16 +107,18 @@ public class AudioDisplayView extends AudioDisplayViewBase implements Initializa
     private void playImpl(int index) {
         if (index >= 0 && index < playlist.getItems().size()) {
             this.index = index;
+            
             AudioArg audioArg = playlist.getItems().get(index);
             playImpl(audioArg);
         }
     }
     
     private void playImpl(AudioArg audioArg) {
-        AudioPlayer audioPlayer = new AudioPlayer();
+        player.stop();
+        
         try (IFullyReader reader = audioArg.getStreamGetter().getInput();
              InputStream stream = new ByteArrayInputStream(reader.readAll())) {
-            audioPlayer.play(stream);
+            player.play(stream);
         } catch (Exception e) {
             e.printStackTrace();
         }
