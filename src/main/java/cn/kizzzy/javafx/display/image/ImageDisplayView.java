@@ -9,8 +9,8 @@ import cn.kizzzy.animations.AnimatorUpdateType;
 import cn.kizzzy.animations.ConstTangentMode;
 import cn.kizzzy.animations.CurveBinding;
 import cn.kizzzy.animations.KeyFrame;
-import cn.kizzzy.javafx.JavafxControlParameter;
 import cn.kizzzy.javafx.JavafxControl;
+import cn.kizzzy.javafx.JavafxControlParameter;
 import cn.kizzzy.javafx.control.LabeledSlider;
 import cn.kizzzy.javafx.display.Stoppable;
 import cn.kizzzy.javafx.display.image.animation.LinerTangleMod;
@@ -95,7 +95,7 @@ abstract class ImageDisplayViewBase extends AnchorPane implements JavafxControl 
 }
 
 @SuppressWarnings("unchecked")
-@JavafxControlParameter(fxml = "/fxml/custom/display/display_image_view.fxml")
+@JavafxControlParameter(fxml = "/fxml/display/image_view.fxml")
 public class ImageDisplayView extends ImageDisplayViewBase implements Initializable, Stoppable {
     
     private static final String[] DEFAULT_COLORS = new String[]{

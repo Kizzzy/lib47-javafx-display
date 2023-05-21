@@ -1,8 +1,8 @@
 package cn.kizzzy.javafx.display.audio;
 
 import cn.kizzzy.io.IFullyReader;
-import cn.kizzzy.javafx.JavafxControlParameter;
 import cn.kizzzy.javafx.JavafxControl;
+import cn.kizzzy.javafx.JavafxControlParameter;
 import cn.kizzzy.javafx.display.Stoppable;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -41,7 +41,7 @@ abstract class AudioDisplayViewBase extends AnchorPane implements JavafxControl 
     }
 }
 
-@JavafxControlParameter(fxml = "/fxml/custom/display/display_audio_view.fxml")
+@JavafxControlParameter(fxml = "/fxml/display/audio_view.fxml")
 public class AudioDisplayView extends AudioDisplayViewBase implements Initializable, Stoppable {
     
     private int index;

@@ -3,8 +3,8 @@ package cn.kizzzy.javafx.display.table;
 import cn.kizzzy.data.TableFile;
 import cn.kizzzy.helper.LogHelper;
 import cn.kizzzy.helper.StringHelper;
-import cn.kizzzy.javafx.JavafxControlParameter;
 import cn.kizzzy.javafx.JavafxControl;
+import cn.kizzzy.javafx.JavafxControlParameter;
 import cn.kizzzy.javafx.control.LabeledTextField;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -55,7 +55,7 @@ abstract class TableDisplayViewBase extends AnchorPane implements JavafxControl 
 }
 
 @SuppressWarnings("unchecked")
-@JavafxControlParameter(fxml = "/fxml/custom/display/display_table_view.fxml")
+@JavafxControlParameter(fxml = "/fxml/display/table_view.fxml")
 public class TableDisplayView extends TableDisplayViewBase implements Initializable {
     
     protected FilteredList<String[]> filteredList;

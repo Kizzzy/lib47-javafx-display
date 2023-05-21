@@ -18,8 +18,8 @@
     </HBox>
 
     <stylesheets>
-        <URL value="@hex/hex-view.css"/>
-        <URL value="@hex/list-view.css"/>
-        <URL value="@hex/table-view.css"/>
+        <URL value="@/css/display/hex/hex-view.css"/>
+        <URL value="@/css/display/hex/list-view.css"/>
+        <URL value="@/css/display/hex/table-view.css"/>
     </stylesheets>
 </fx:root>

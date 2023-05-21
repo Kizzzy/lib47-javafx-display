@@ -1,7 +1,7 @@
 package cn.kizzzy.javafx.display.hex;
 
-import cn.kizzzy.javafx.JavafxControlParameter;
 import cn.kizzzy.javafx.JavafxControl;
+import cn.kizzzy.javafx.JavafxControlParameter;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.fxml.FXML;
@@ -33,7 +33,7 @@ abstract class HexViewBase extends AnchorPane implements JavafxControl {
     }
 }
 
-@JavafxControlParameter(fxml = "/fxml/custom/display/hex_view.fxml")
+@JavafxControlParameter(fxml = "/fxml/display/hex_view.fxml")
 public class HexView extends HexViewBase implements Initializable {
     
     private static final int line_size = 16;
