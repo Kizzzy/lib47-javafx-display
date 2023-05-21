@@ -9,9 +9,9 @@ import cn.kizzzy.animations.AnimatorUpdateType;
 import cn.kizzzy.animations.ConstTangentMode;
 import cn.kizzzy.animations.CurveBinding;
 import cn.kizzzy.animations.KeyFrame;
-import cn.kizzzy.javafx.custom.CustomControlParamter;
-import cn.kizzzy.javafx.custom.ICustomControl;
-import cn.kizzzy.javafx.custom.LabeledSlider;
+import cn.kizzzy.javafx.JavafxControlParameter;
+import cn.kizzzy.javafx.JavafxControl;
+import cn.kizzzy.javafx.control.LabeledSlider;
 import cn.kizzzy.javafx.display.Stoppable;
 import cn.kizzzy.javafx.display.image.animation.LinerTangleMod;
 import cn.kizzzy.javafx.display.image.animation.TrackFrame;
@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-abstract class ImageDisplayViewBase extends AnchorPane implements ICustomControl {
+abstract class ImageDisplayViewBase extends AnchorPane implements JavafxControl {
     
     @FXML
     protected CheckBox black_chk;
@@ -95,7 +95,7 @@ abstract class ImageDisplayViewBase extends AnchorPane implements ICustomControl
 }
 
 @SuppressWarnings("unchecked")
-@CustomControlParamter(fxml = "/fxml/custom/display/display_image_view.fxml")
+@JavafxControlParameter(fxml = "/fxml/custom/display/display_image_view.fxml")
 public class ImageDisplayView extends ImageDisplayViewBase implements Initializable, Stoppable {
     
     private static final String[] DEFAULT_COLORS = new String[]{

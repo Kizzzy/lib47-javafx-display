@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import cn.kizzzy.javafx.custom.*?>
+<?import cn.kizzzy.javafx.control.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 

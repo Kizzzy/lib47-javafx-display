@@ -1,8 +1,8 @@
 package cn.kizzzy.javafx.display.audio;
 
 import cn.kizzzy.io.IFullyReader;
-import cn.kizzzy.javafx.custom.CustomControlParamter;
-import cn.kizzzy.javafx.custom.ICustomControl;
+import cn.kizzzy.javafx.JavafxControlParameter;
+import cn.kizzzy.javafx.JavafxControl;
 import cn.kizzzy.javafx.display.Stoppable;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -19,7 +19,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-abstract class AudioDisplayViewBase extends AnchorPane implements ICustomControl {
+abstract class AudioDisplayViewBase extends AnchorPane implements JavafxControl {
     
     @FXML
     protected ListView<AudioArg> playlist;
@@ -41,7 +41,7 @@ abstract class AudioDisplayViewBase extends AnchorPane implements ICustomControl
     }
 }
 
-@CustomControlParamter(fxml = "/fxml/custom/display/display_audio_view.fxml")
+@JavafxControlParameter(fxml = "/fxml/custom/display/display_audio_view.fxml")
 public class AudioDisplayView extends AudioDisplayViewBase implements Initializable, Stoppable {
     
     private int index;

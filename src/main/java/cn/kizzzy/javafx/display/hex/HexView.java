@@ -1,7 +1,7 @@
 package cn.kizzzy.javafx.display.hex;
 
-import cn.kizzzy.javafx.custom.CustomControlParamter;
-import cn.kizzzy.javafx.custom.ICustomControl;
+import cn.kizzzy.javafx.JavafxControlParameter;
+import cn.kizzzy.javafx.JavafxControl;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.fxml.FXML;
@@ -14,7 +14,7 @@ import javafx.scene.layout.AnchorPane;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-abstract class HexViewBase extends AnchorPane implements ICustomControl {
+abstract class HexViewBase extends AnchorPane implements JavafxControl {
     
     @FXML
     protected ListView<String> line_number_lsv;
@@ -33,7 +33,7 @@ abstract class HexViewBase extends AnchorPane implements ICustomControl {
     }
 }
 
-@CustomControlParamter(fxml = "/fxml/custom/display/hex_view.fxml")
+@JavafxControlParameter(fxml = "/fxml/custom/display/hex_view.fxml")
 public class HexView extends HexViewBase implements Initializable {
     
     private static final int line_size = 16;

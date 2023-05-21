@@ -1,9 +1,9 @@
 package cn.kizzzy.javafx.display.text;
 
 import cn.kizzzy.helper.StringHelper;
-import cn.kizzzy.javafx.custom.CustomControlParamter;
-import cn.kizzzy.javafx.custom.ICustomControl;
-import cn.kizzzy.javafx.custom.LabeledTextField;
+import cn.kizzzy.javafx.JavafxControlParameter;
+import cn.kizzzy.javafx.JavafxControl;
+import cn.kizzzy.javafx.control.LabeledTextField;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -14,7 +14,7 @@ import javafx.scene.layout.AnchorPane;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-abstract class TextDisplayViewBase extends AnchorPane implements ICustomControl {
+abstract class TextDisplayViewBase extends AnchorPane implements JavafxControl {
     
     @FXML
     protected LabeledTextField filterText;
@@ -30,7 +30,7 @@ abstract class TextDisplayViewBase extends AnchorPane implements ICustomControl 
     }
 }
 
-@CustomControlParamter(fxml = "/fxml/custom/display/display_text_view.fxml")
+@JavafxControlParameter(fxml = "/fxml/custom/display/display_text_view.fxml")
 public class TextDisplayView extends TextDisplayViewBase implements Initializable {
     
     @Override

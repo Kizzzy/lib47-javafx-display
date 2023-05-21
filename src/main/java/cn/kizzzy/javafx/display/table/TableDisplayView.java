@@ -3,9 +3,9 @@ package cn.kizzzy.javafx.display.table;
 import cn.kizzzy.data.TableFile;
 import cn.kizzzy.helper.LogHelper;
 import cn.kizzzy.helper.StringHelper;
-import cn.kizzzy.javafx.custom.CustomControlParamter;
-import cn.kizzzy.javafx.custom.ICustomControl;
-import cn.kizzzy.javafx.custom.LabeledTextField;
+import cn.kizzzy.javafx.JavafxControlParameter;
+import cn.kizzzy.javafx.JavafxControl;
+import cn.kizzzy.javafx.control.LabeledTextField;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.ResourceBundle;
 
-abstract class TableDisplayViewBase extends AnchorPane implements ICustomControl {
+abstract class TableDisplayViewBase extends AnchorPane implements JavafxControl {
     
     @FXML
     protected LabeledTextField fileNameTbf;
@@ -55,7 +55,7 @@ abstract class TableDisplayViewBase extends AnchorPane implements ICustomControl
 }
 
 @SuppressWarnings("unchecked")
-@CustomControlParamter(fxml = "/fxml/custom/display/display_table_view.fxml")
+@JavafxControlParameter(fxml = "/fxml/custom/display/display_table_view.fxml")
 public class TableDisplayView extends TableDisplayViewBase implements Initializable {
     
     protected FilteredList<String[]> filteredList;

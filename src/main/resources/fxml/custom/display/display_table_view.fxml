@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import cn.kizzzy.javafx.custom.LabeledTextField?>
+<?import cn.kizzzy.javafx.control.LabeledTextField?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
