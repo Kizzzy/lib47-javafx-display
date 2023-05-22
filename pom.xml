@@ -6,13 +6,22 @@
 
     <groupId>cn.kizzzy</groupId>
     <artifactId>lib47-javafx-display</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>${lib47-version}</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+
+        <lib47-version>1.0-SNAPSHOT</lib47-version>
+        <maven-compiler-plugin-version>3.5.1</maven-compiler-plugin-version>
+
+        <jaudiotagger-version>2.0.3</jaudiotagger-version>
+        <java-stream-player-version>10.0.2</java-stream-player-version>
+        <jflac-codec-version>1.5.2</jflac-codec-version>
+        <mp3spi-version>1.9.5.4</mp3spi-version>
+        <vorbisspi-version>1.0.3.3</vorbisspi-version>
     </properties>
 
     <repositories>
@@ -27,49 +36,43 @@
         <dependency>
             <groupId>cn.kizzzy</groupId>
             <artifactId>lib47-animations</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${lib47-version}</version>
         </dependency>
 
         <dependency>
             <groupId>cn.kizzzy</groupId>
             <artifactId>lib47-javafx</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-            <groupId>cn.kizzzy</groupId>
-            <artifactId>lib47-vfs</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${lib47-version}</version>
         </dependency>
 
         <dependency>
             <groupId>org</groupId>
             <artifactId>jaudiotagger</artifactId>
-            <version>2.0.3</version>
+            <version>${jaudiotagger-version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.github.goxr3plus</groupId>
             <artifactId>java-stream-player</artifactId>
-            <version>10.0.2</version>
+            <version>${java-stream-player-version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jflac</groupId>
             <artifactId>jflac-codec</artifactId>
-            <version>1.5.2</version>
+            <version>${jflac-codec-version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.googlecode.soundlibs</groupId>
             <artifactId>mp3spi</artifactId>
-            <version>1.9.5.4</version>
+            <version>${mp3spi-version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.googlecode.soundlibs</groupId>
             <artifactId>vorbisspi</artifactId>
-            <version>1.0.3.3</version>
+            <version>${vorbisspi-version}</version>
         </dependency>
 
     </dependencies>
@@ -79,7 +82,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>${maven-compiler-plugin-version}</version>
             </plugin>
         </plugins>
     </build>
