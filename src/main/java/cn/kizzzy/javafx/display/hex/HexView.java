@@ -1,7 +1,7 @@
 package cn.kizzzy.javafx.display.hex;
 
-import cn.kizzzy.javafx.JavafxControl;
 import cn.kizzzy.javafx.JavafxControlParameter;
+import cn.kizzzy.javafx.JavafxView;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.fxml.FXML;
@@ -9,12 +9,11 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.TextArea;
-import javafx.scene.layout.AnchorPane;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 
-abstract class HexViewBase extends AnchorPane implements JavafxControl {
+abstract class HexViewBase extends JavafxView {
     
     @FXML
     protected ListView<String> line_number_lsv;
@@ -27,10 +26,6 @@ abstract class HexViewBase extends AnchorPane implements JavafxControl {
     
     @FXML
     protected ScrollBar progress_slb;
-    
-    public HexViewBase() {
-        init();
-    }
 }
 
 @JavafxControlParameter(fxml = "/fxml/display/hex_view.fxml")

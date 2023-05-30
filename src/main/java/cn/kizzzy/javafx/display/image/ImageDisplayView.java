@@ -9,8 +9,8 @@ import cn.kizzzy.animations.AnimatorUpdateType;
 import cn.kizzzy.animations.ConstTangentMode;
 import cn.kizzzy.animations.CurveBinding;
 import cn.kizzzy.animations.KeyFrame;
-import cn.kizzzy.javafx.JavafxControl;
 import cn.kizzzy.javafx.JavafxControlParameter;
+import cn.kizzzy.javafx.JavafxView;
 import cn.kizzzy.javafx.control.LabeledSlider;
 import cn.kizzzy.javafx.display.Stoppable;
 import cn.kizzzy.javafx.display.image.animation.LinerTangleMod;
@@ -34,7 +34,6 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -48,7 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-abstract class ImageDisplayViewBase extends AnchorPane implements JavafxControl {
+abstract class ImageDisplayViewBase extends JavafxView {
     
     @FXML
     protected CheckBox black_chk;
@@ -88,10 +87,6 @@ abstract class ImageDisplayViewBase extends AnchorPane implements JavafxControl 
     
     @FXML
     protected Canvas canvas;
-    
-    public ImageDisplayViewBase() {
-        this.init();
-    }
 }
 
 @SuppressWarnings("unchecked")
@@ -123,14 +118,17 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     private AnimatorPlayer animatorPlayer;
     private TrackFrameProcessor frameProcessor;
     
-    private final List<TrackElement> elements = new LinkedList<>();
-    private List<Frame> frames = new LinkedList<>();
+    private List<TrackElement> elements;
+    private List<Frame> frames;
     
     private ImageArg arg;
     private Map<Frame, Image> imageKvs;
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        elements = new LinkedList<>();
+        frames = new LinkedList<>();
+        
         frameProcessor = new TrackFrameProcessor(this::showFrames);
         
         Animator animator = new Animator();

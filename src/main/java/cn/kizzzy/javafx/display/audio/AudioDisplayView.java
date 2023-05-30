@@ -1,8 +1,8 @@
 package cn.kizzzy.javafx.display.audio;
 
 import cn.kizzzy.io.IFullyReader;
-import cn.kizzzy.javafx.JavafxControl;
 import cn.kizzzy.javafx.JavafxControlParameter;
+import cn.kizzzy.javafx.JavafxView;
 import cn.kizzzy.javafx.display.Stoppable;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -12,14 +12,13 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.AnchorPane;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-abstract class AudioDisplayViewBase extends AnchorPane implements JavafxControl {
+abstract class AudioDisplayViewBase extends JavafxView {
     
     @FXML
     protected ListView<AudioArg> playlist;
@@ -35,10 +34,6 @@ abstract class AudioDisplayViewBase extends AnchorPane implements JavafxControl 
     
     @FXML
     protected Button next_btn;
-    
-    public AudioDisplayViewBase() {
-        this.init();
-    }
 }
 
 @JavafxControlParameter(fxml = "/fxml/display/audio_view.fxml")

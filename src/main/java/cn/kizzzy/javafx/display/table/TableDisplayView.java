@@ -3,8 +3,8 @@ package cn.kizzzy.javafx.display.table;
 import cn.kizzzy.data.TableFile;
 import cn.kizzzy.helper.LogHelper;
 import cn.kizzzy.helper.StringHelper;
-import cn.kizzzy.javafx.JavafxControl;
 import cn.kizzzy.javafx.JavafxControlParameter;
+import cn.kizzzy.javafx.JavafxView;
 import cn.kizzzy.javafx.control.LabeledTextField;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -19,14 +19,13 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.layout.AnchorPane;
 
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.ResourceBundle;
 
-abstract class TableDisplayViewBase extends AnchorPane implements JavafxControl {
+abstract class TableDisplayViewBase extends JavafxView {
     
     @FXML
     protected LabeledTextField fileNameTbf;
@@ -48,13 +47,8 @@ abstract class TableDisplayViewBase extends AnchorPane implements JavafxControl 
     
     @FXML
     protected Label info;
-    
-    public TableDisplayViewBase() {
-        this.init();
-    }
 }
 
-@SuppressWarnings("unchecked")
 @JavafxControlParameter(fxml = "/fxml/display/table_view.fxml")
 public class TableDisplayView extends TableDisplayViewBase implements Initializable {
     

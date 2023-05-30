@@ -1,20 +1,19 @@
 package cn.kizzzy.javafx.display.text;
 
 import cn.kizzzy.helper.StringHelper;
-import cn.kizzzy.javafx.JavafxControl;
 import cn.kizzzy.javafx.JavafxControlParameter;
+import cn.kizzzy.javafx.JavafxView;
 import cn.kizzzy.javafx.control.LabeledTextField;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
-import javafx.scene.layout.AnchorPane;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 
-abstract class TextDisplayViewBase extends AnchorPane implements JavafxControl {
+abstract class TextDisplayViewBase extends JavafxView {
     
     @FXML
     protected LabeledTextField filterText;
@@ -24,10 +23,6 @@ abstract class TextDisplayViewBase extends AnchorPane implements JavafxControl {
     
     @FXML
     protected TextArea textArea;
-    
-    public TextDisplayViewBase() {
-        this.init();
-    }
 }
 
 @JavafxControlParameter(fxml = "/fxml/display/text_view.fxml")
