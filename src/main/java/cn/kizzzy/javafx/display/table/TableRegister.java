@@ -1,6 +1,5 @@
 package cn.kizzzy.javafx.display.table;
 
-import cn.kizzzy.helper.LogHelper;
 import cn.kizzzy.javafx.display.DisplayLoader;
 import cn.kizzzy.javafx.display.Register;
 import cn.kizzzy.javafx.display.RegisterAttribute;
@@ -22,16 +21,12 @@ public class TableRegister implements Register {
     }
     
     @Override
-    public void show(AnchorPane view, DisplayLoader display, IPackage vfs, Leaf leaf) {
-        try {
-            TableDisplayLoader loader = (TableDisplayLoader) display;
-            TableArg arg = loader.loadTable(vfs, leaf);
-            if (arg != null) {
-                TableDisplayView displayView = (TableDisplayView) view;
-                displayView.show(arg);
-            }
-        } catch (Exception e) {
-            LogHelper.info("show table error: ", e);
+    public void show(AnchorPane view, DisplayLoader display, IPackage vfs, Leaf leaf) throws Exception {
+        TableDisplayLoader loader = (TableDisplayLoader) display;
+        TableArg arg = loader.loadTable(vfs, leaf);
+        if (arg != null) {
+            TableDisplayView displayView = (TableDisplayView) view;
+            displayView.show(arg);
         }
     }
 }

@@ -1,6 +1,5 @@
 package cn.kizzzy.javafx.display.text;
 
-import cn.kizzzy.helper.LogHelper;
 import cn.kizzzy.javafx.display.DisplayLoader;
 import cn.kizzzy.javafx.display.Register;
 import cn.kizzzy.javafx.display.RegisterAttribute;
@@ -22,16 +21,12 @@ public class TextRegister implements Register {
     }
     
     @Override
-    public void show(AnchorPane view, DisplayLoader display, IPackage vfs, Leaf leaf) {
-        try {
-            TextDisplayLoader loader = (TextDisplayLoader) display;
-            TextArg arg = loader.loadText(vfs, leaf);
-            if (arg != null) {
-                TextDisplayView displayView = (TextDisplayView) view;
-                displayView.show(arg);
-            }
-        } catch (Exception e) {
-            LogHelper.info("show text error: ", e);
+    public void show(AnchorPane view, DisplayLoader display, IPackage vfs, Leaf leaf) throws Exception {
+        TextDisplayLoader loader = (TextDisplayLoader) display;
+        TextArg arg = loader.loadText(vfs, leaf);
+        if (arg != null) {
+            TextDisplayView displayView = (TextDisplayView) view;
+            displayView.show(arg);
         }
     }
 }

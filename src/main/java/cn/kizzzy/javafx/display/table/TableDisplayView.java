@@ -1,7 +1,6 @@
 package cn.kizzzy.javafx.display.table;
 
 import cn.kizzzy.data.TableFile;
-import cn.kizzzy.helper.LogHelper;
 import cn.kizzzy.helper.StringHelper;
 import cn.kizzzy.javafx.JavafxControlParameter;
 import cn.kizzzy.javafx.JavafxView;
@@ -19,6 +18,8 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.Arrays;
@@ -51,6 +52,8 @@ abstract class TableDisplayViewBase extends JavafxView {
 
 @JavafxControlParameter(fxml = "/fxml/display/table_view.fxml")
 public class TableDisplayView extends TableDisplayViewBase implements Initializable {
+    
+    protected static final Logger logger = LoggerFactory.getLogger(TableDisplayView.class);
     
     protected FilteredList<String[]> filteredList;
     
@@ -119,7 +122,7 @@ public class TableDisplayView extends TableDisplayViewBase implements Initializa
                         }
                     });
             } catch (Exception e) {
-                LogHelper.error(null, e);
+                logger.error("filter error", e);
             }
         }
     }

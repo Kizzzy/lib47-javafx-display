@@ -1,6 +1,5 @@
 package cn.kizzzy.javafx.display.image;
 
-import cn.kizzzy.helper.LogHelper;
 import cn.kizzzy.javafx.display.DisplayLoader;
 import cn.kizzzy.javafx.display.Register;
 import cn.kizzzy.javafx.display.RegisterAttribute;
@@ -22,16 +21,12 @@ public class ImageRegister implements Register {
     }
     
     @Override
-    public void show(AnchorPane view, DisplayLoader display, IPackage vfs, Leaf leaf) {
-        try {
-            ImageDisplayLoader loader = (ImageDisplayLoader) display;
-            ImageArg arg = loader.loadImage(vfs, leaf);
-            if (arg != null) {
-                ImageDisplayView displayView = (ImageDisplayView) view;
-                displayView.show(arg);
-            }
-        } catch (Exception e) {
-            LogHelper.info("show image error: ", e);
+    public void show(AnchorPane view, DisplayLoader display, IPackage vfs, Leaf leaf) throws Exception {
+        ImageDisplayLoader loader = (ImageDisplayLoader) display;
+        ImageArg arg = loader.loadImage(vfs, leaf);
+        if (arg != null) {
+            ImageDisplayView displayView = (ImageDisplayView) view;
+            displayView.show(arg);
         }
     }
 }

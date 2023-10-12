@@ -1,6 +1,5 @@
 package cn.kizzzy.javafx.display.audio;
 
-import cn.kizzzy.helper.LogHelper;
 import cn.kizzzy.javafx.display.DisplayLoader;
 import cn.kizzzy.javafx.display.Register;
 import cn.kizzzy.javafx.display.RegisterAttribute;
@@ -22,16 +21,12 @@ public class AudioRegister implements Register {
     }
     
     @Override
-    public void show(AnchorPane view, DisplayLoader display, IPackage vfs, Leaf leaf) {
-        try {
-            AudioDisplayLoader loader = (AudioDisplayLoader) display;
-            AudioArg arg = loader.loadAudio(vfs, leaf);
-            if (arg != null) {
-                AudioDisplayView displayView = (AudioDisplayView) view;
-                displayView.show(arg);
-            }
-        } catch (Exception e) {
-            LogHelper.info("show text error: ", e);
+    public void show(AnchorPane view, DisplayLoader display, IPackage vfs, Leaf leaf) throws Exception {
+        AudioDisplayLoader loader = (AudioDisplayLoader) display;
+        AudioArg arg = loader.loadAudio(vfs, leaf);
+        if (arg != null) {
+            AudioDisplayView displayView = (AudioDisplayView) view;
+            displayView.show(arg);
         }
     }
 }
