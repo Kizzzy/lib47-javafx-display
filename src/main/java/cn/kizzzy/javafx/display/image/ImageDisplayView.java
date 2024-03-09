@@ -25,6 +25,7 @@ import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
@@ -39,6 +40,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.net.URL;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -46,17 +49,21 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 abstract class ImageDisplayViewBase extends JavafxView {
-    
-    @FXML
-    protected CheckBox black_chk;
     
     @FXML
     protected CheckBox filter_chk;
     
     @FXML
-    protected HBox color_hld;
+    protected HBox bg_color_hld;
+    
+    @FXML
+    protected HBox mixed_color_hld;
+    
+    @FXML
+    protected Button export_button;
     
     @FXML
     protected LabeledSlider scale_sld;
@@ -104,6 +111,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         "#ffffffff"
     };
     
+    private Color bgColor;
     private Color mixedColor;
     
     private IntegerProperty layer;
@@ -136,15 +144,15 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         animator.getStateInfo().after = frameProcessor::flushFrame;
         animatorPlayer = new AnimatorPlayer(animator);
         
+        setColors(bg_color_hld, color -> bgColor = color, DEFAULT_COLORS);
+        
+        export_button.setOnAction(this::doExport);
+        
         layer = new SimpleIntegerProperty();
         layer.addListener((observable, oldValue, newValue) -> {
             if (layer_cob.getValue() != Layer.NONE) {
                 showImpl();
             }
-        });
-        
-        black_chk.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            showImpl();
         });
         
         layer_cob.getItems().addAll(Layer.values());
@@ -229,6 +237,12 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         }
     }
     
+    private void doExport(ActionEvent actionEvent) {
+        BufferedImage image = new BufferedImage(0, 0, BufferedImage.TYPE_4BYTE_ABGR);
+        Graphics2D context = image.createGraphics();
+        // todo
+    }
+    
     private void onCanvasDragging(Rect startRect, Point diff) {
         Platform.runLater(() -> {
             double newX = startRect.getMinX() - diff.getX();
@@ -252,9 +266,10 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         showImpl();
     }
     
-    public void setColors(String... colors) {
-        mixedColor = null;
-        color_hld.getChildren().clear();
+    public void setColors(Pane panel, Consumer<Color> callback, String... colors) {
+        callback.accept(null);
+        
+        panel.getChildren().clear();
         
         if (colors == null) {
             colors = DEFAULT_COLORS;
@@ -267,11 +282,11 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             pane.setPrefSize(24, 24);
             pane.setStyle("-fx-background-color: " + c + ";");
             pane.setOnMouseClicked(event -> {
-                mixedColor = color;
+                callback.accept(color);
                 showImpl();
             });
             
-            color_hld.getChildren().add(pane);
+            panel.getChildren().add(pane);
         }
     }
     
@@ -295,7 +310,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         
         this.arg = arg;
         
-        setColors(this.arg.colors);
+        setColors(mixed_color_hld, color -> mixedColor = color, this.arg.colors);
         
         List<Element> elements = new LinkedList<>();
         List<CurveBinding<TrackFrame>> curves = new LinkedList<>();
@@ -430,7 +445,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         GraphicsContext context = canvas.getGraphicsContext2D();
         context.clearRect(0, 0, drawRect.getWidth(), drawRect.getHeight());
         
-        if (frames == null || frames.size() == 0) {
+        if (frames == null || frames.isEmpty()) {
             return;
         }
         
@@ -471,7 +486,11 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             
             context.save();
             Rotate rotate = new Rotate(frame.rotateZ, frame.x + frame.width / 2, frame.y + frame.height / 2);
-            context.setTransform(rotate.getMxx(), rotate.getMyx(), rotate.getMxy(), rotate.getMyy(), rotate.getTx(), rotate.getTy());
+            context.setTransform(
+                rotate.getMxx(), rotate.getMyx(),
+                rotate.getMxy(), rotate.getMyy(),
+                rotate.getTx(), rotate.getTy()
+            );
             context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
             context.restore();
             
@@ -511,7 +530,11 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             
             context.save();
             Rotate rotate = new Rotate(frame.rotateZ, frame.x + frame.width / 2, frame.y + frame.height / 2);
-            context.setTransform(rotate.getMxx(), rotate.getMyx(), rotate.getMxy(), rotate.getMyy(), rotate.getTx(), rotate.getTy());
+            context.setTransform(
+                rotate.getMxx(), rotate.getMyx(),
+                rotate.getMxy(), rotate.getMyy(),
+                rotate.getTx(), rotate.getTy()
+            );
             context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
             context.restore();
             
@@ -546,12 +569,13 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             
             for (int i = 0; i < frame.height; ++i) {
                 for (int j = 0; j < frame.width; ++j) {
-                    int argb = image.getPixelReader().getArgb(j, i);
-                    int a = (int) (((argb >> 24) & 0xFF) * mixedColor.getOpacity());
-                    int r = (int) (((argb >> 16) & 0xFF) * mixedColor.getRed());
-                    int g = (int) (((argb >> 8) & 0xFF) * mixedColor.getGreen());
-                    int b = (int) (((argb >> 0) & 0xFF) * mixedColor.getBlue());
-                    blendImage.getPixelWriter().setArgb(j, i, (a << 24) | (r << 16) | (g << 8) | b);
+                    int argb_old = image.getPixelReader().getArgb(j, i);
+                    int a = (int) (((argb_old >> 24) & 0xFF) * mixedColor.getOpacity());
+                    int r = (int) (((argb_old >> 16) & 0xFF) * mixedColor.getRed());
+                    int g = (int) (((argb_old >> 8) & 0xFF) * mixedColor.getGreen());
+                    int b = (int) (((argb_old >> 0) & 0xFF) * mixedColor.getBlue());
+                    int argb_new = (a << 24) | (r << 16) | (g << 8) | b;
+                    blendImage.getPixelWriter().setArgb(j, i, argb_new);
                 }
             }
             image = blendImage;
@@ -561,19 +585,19 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     }
     
     private void drawText(GraphicsContext context, String text, double x, double y) {
-        context.setFill(black_chk.isSelected() ? Color.WHITE : Color.BLACK);
+        context.setFill(bgColor != null ? Color.WHITE : Color.BLACK);
         context.fillText(text, x, y);
     }
     
     private void drawRect(GraphicsContext context, int x, int y, double width, double height) {
-        if (black_chk.isSelected()) {
-            context.setFill(Color.BLACK);
+        if (bgColor != null) {
+            context.setFill(bgColor);
             context.fillRect(x, y, width, height);
         }
     }
     
     private void drawFrame(GraphicsContext context, double x, double y, double w, double h) {
-        context.setStroke(black_chk.isSelected() ? Color.WHITE : Color.BLACK);
+        context.setStroke(bgColor != null ? Color.WHITE : Color.BLACK);
         context.strokeLine(x, y, x + w, y);
         context.strokeLine(x + w, y, x + w, y + h);
         context.strokeLine(x + w, y + h, x, y + h);
@@ -581,7 +605,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     }
     
     private void drawPivot(GraphicsContext context, float pivotX, float pivotY) {
-        context.setStroke(black_chk.isSelected() ? Color.WHITE : Color.BLACK);
+        context.setStroke(bgColor != null ? Color.WHITE : Color.BLACK);
         context.strokeLine(pivotX - 50, pivotY, pivotX + 50, pivotY);
         context.strokeLine(pivotX, pivotY - 20, pivotX, pivotY + 20);
     }
