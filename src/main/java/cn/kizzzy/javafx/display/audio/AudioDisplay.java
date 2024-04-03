@@ -1,6 +1,7 @@
 package cn.kizzzy.javafx.display.audio;
 
 import cn.kizzzy.javafx.display.DisplayLoaderAttribute;
+import cn.kizzzy.javafx.display.Magic;
 import cn.kizzzy.vfs.IInputStreamGetter;
 import cn.kizzzy.vfs.IPackage;
 import cn.kizzzy.vfs.tree.Leaf;
@@ -15,6 +16,10 @@ import cn.kizzzy.vfs.tree.Leaf;
     "snd",
     "spx",
     "wav",
+}, magic = {
+    Magic.MP3,
+    Magic.OGG,
+    Magic.WAV,
 })
 public class AudioDisplay implements AudioDisplayLoader {
     

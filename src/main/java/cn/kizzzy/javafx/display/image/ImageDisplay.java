@@ -1,6 +1,7 @@
 package cn.kizzzy.javafx.display.image;
 
 import cn.kizzzy.javafx.display.DisplayLoaderAttribute;
+import cn.kizzzy.javafx.display.Magic;
 import cn.kizzzy.vfs.IPackage;
 import cn.kizzzy.vfs.tree.Leaf;
 
@@ -14,6 +15,9 @@ import java.io.ByteArrayInputStream;
     "jpg",
     "jpeg",
     "png",
+}, magic = {
+    Magic.JPG,
+    Magic.PNG,
 })
 public class ImageDisplay implements ImageDisplayLoader {
     
