@@ -17,6 +17,7 @@
         <lib47-version>1.0-SNAPSHOT</lib47-version>
         <maven-compiler-plugin-version>3.5.1</maven-compiler-plugin-version>
         
+        <fastjson-version>2.0.25</fastjson-version>
         <jaudiotagger-version>2.0.3</jaudiotagger-version>
         <java-stream-player-version>10.0.2</java-stream-player-version>
         <jflac-codec-version>1.5.2</jflac-codec-version>
@@ -44,6 +45,12 @@
             <groupId>cn.kizzzy</groupId>
             <artifactId>lib47-javafx</artifactId>
             <version>${lib47-version}</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>${fastjson-version}</version>
         </dependency>
         
         <dependency>
