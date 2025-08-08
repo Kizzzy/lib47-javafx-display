@@ -10,7 +10,11 @@ public class LinerTangleMod implements TangentMode<TrackFrame> {
         Frame x = xtf.frame;
         Frame y = ytf.frame;
         
-        if (x == null) {
+        if (x == null || x.empty) {
+            return ytf;
+        }
+        
+        if (y == null || y.empty) {
             return xtf;
         }
         

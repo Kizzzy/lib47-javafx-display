@@ -37,7 +37,7 @@ public class TrackElement implements Element {
     @Override
     public Vector3 getPosition() {
         if (frame == null) {
-            return new Vector3((int) track.frames.get(0).x, (int) track.frames.get(0).y, 0);
+            return new Vector3((int) firstFrame.x, (int) firstFrame.y, 0);
         }
         return new Vector3((int) frame.x, (int) frame.y, 0);
     }

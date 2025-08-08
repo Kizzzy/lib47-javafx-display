@@ -1,5 +1,6 @@
 package cn.kizzzy.javafx.display.image.animation;
 
+import cn.kizzzy.animations.AnimatorCallback;
 import cn.kizzzy.animations.IProcessor;
 import cn.kizzzy.animations.StateInfo;
 import cn.kizzzy.javafx.display.image.Frame;
@@ -9,7 +10,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class TrackFrameProcessor implements IProcessor<TrackFrame> {
+public class TrackFrameProcessor implements IProcessor<TrackFrame>, AnimatorCallback {
     
     private final Consumer<List<Frame>> consumer;
     
@@ -29,13 +30,15 @@ public class TrackFrameProcessor implements IProcessor<TrackFrame> {
         }
     }
     
-    public void clearFrame() {
+    @Override
+    public void beforeUpdate() {
         synchronized (frames) {
             frames.clear();
         }
     }
     
-    public void flushFrame() {
+    @Override
+    public void afterUpdate() {
         Platform.runLater(() -> {
             List<Frame> temp = null;
             synchronized (frames) {

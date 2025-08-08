@@ -18,13 +18,11 @@ import cn.kizzzy.javafx.display.image.animation.TrackFrame;
 import cn.kizzzy.javafx.display.image.animation.TrackFrameProcessor;
 import cn.kizzzy.javafx.display.image.aoi.AoiMap;
 import cn.kizzzy.javafx.display.image.aoi.Element;
-import cn.kizzzy.javafx.display.image.aoi.Vector4f;
 import cn.kizzzy.javafx.display.image.getter.AoiImageGetter;
 import cn.kizzzy.javafx.display.image.getter.IImageGetter;
 import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -34,7 +32,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.image.Image;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -44,10 +41,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.net.URL;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
@@ -69,10 +64,10 @@ abstract class ImageDisplayViewBase extends JavafxView {
     protected LabeledSlider scale_sld;
     
     @FXML
-    protected ChoiceBox<Layer> layer_cob;
+    protected LabeledSlider layer_sld;
     
     @FXML
-    protected LabeledSlider layer_sld;
+    protected ChoiceBox<Layer> layer_chk;
     
     @FXML
     protected Button prev_btn;
@@ -88,6 +83,9 @@ abstract class ImageDisplayViewBase extends JavafxView {
     
     @FXML
     protected CheckBox loop_chk;
+    
+    @FXML
+    protected LabeledSlider frame_sld;
     
     @FXML
     protected HBox canvas_hld;
@@ -116,8 +114,8 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     
     private IntegerProperty layer;
     
-    private Rect drawRect;
-    private Vector4f range;
+    private Stat stat;
+    
     private CanvasDraggingThread draggingThread;
     
     private AoiMap map;
@@ -130,39 +128,49 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     private List<Frame> frames;
     
     private ImageArg arg;
-    private Map<Frame, Image> imageKvs;
+    private ImageCreator creator;
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         elements = new LinkedList<>();
         frames = new LinkedList<>();
         
-        frameProcessor = new TrackFrameProcessor(this::showFrames);
-        
-        Animator animator = new Animator();
-        animator.getStateInfo().before = frameProcessor::clearFrame;
-        animator.getStateInfo().after = frameProcessor::flushFrame;
-        animatorPlayer = new AnimatorPlayer(animator);
+        filter_chk.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            // todo
+        });
         
         setColors(bg_color_hld, color -> bgColor = color, DEFAULT_COLORS);
         
+        setColors(mixed_color_hld, color -> mixedColor = color, DEFAULT_COLORS);
+        
         export_button.setOnAction(this::doExport);
+        
+        scale_sld.valueProperty().addListener((observable, oldValue, newValue) -> {
+            // todo
+        });
         
         layer = new SimpleIntegerProperty();
         layer.addListener((observable, oldValue, newValue) -> {
-            if (layer_cob.getValue() != Layer.NONE) {
+            if (layer_chk.getValue() != Layer.NONE) {
                 showImpl();
             }
-        });
-        
-        layer_cob.getItems().addAll(Layer.values());
-        layer_cob.valueProperty().addListener((observable, oldValue, newValue) -> {
-            showImpl();
         });
         
         layer_sld.valueProperty().addListener((observable, oldValue, newValue) -> {
             layer.setValue(newValue);
         });
+        
+        layer_chk.getItems().addAll(Layer.values());
+        layer_chk.valueProperty().addListener((observable, oldValue, newValue) -> {
+            showImpl();
+        });
+        
+        frameProcessor = new TrackFrameProcessor(this::showFrames);
+        
+        Animator animator = new Animator();
+        animator.getStateInfo().callback = frameProcessor;
+        
+        animatorPlayer = new AnimatorPlayer(animator);
         
         prev_btn.setOnAction(event -> {
             animatorPlayer.prev();
@@ -193,12 +201,16 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         });
         loop_chk.setSelected(true);
         
+        frame_sld.valueProperty().addListener((observable, oldValue, newValue) -> {
+            animatorPlayer.jumpTo((int) newValue);
+        });
+        
         canvas.setOnDragDetected(event -> canvas.startFullDrag());
         canvas.setOnMouseDragEntered(event -> {
             if (draggingThread == null) {
                 draggingThread = new CanvasDraggingThread(
                     new Point(event.getX(), event.getY()),
-                    drawRect,
+                    stat.drawRect,
                     this::onCanvasDragging
                 );
                 draggingThread.start();
@@ -217,13 +229,11 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         });
         
         canvas_hld.widthProperty().addListener((observable, oldValue, newValue) -> {
-            onCanvasResize(canvas_hld.getWidth(), canvas_hld.getHeight());
+            onCanvasResizing(canvas_hld.getWidth(), canvas_hld.getHeight());
         });
         canvas_hld.heightProperty().addListener((observable, oldValue, newValue) -> {
-            onCanvasResize(canvas_hld.getWidth(), canvas_hld.getHeight());
+            onCanvasResizing(canvas_hld.getWidth(), canvas_hld.getHeight());
         });
-        
-        resetAll();
     }
     
     @Override
@@ -245,23 +255,19 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     
     private void onCanvasDragging(Rect startRect, Point diff) {
         Platform.runLater(() -> {
-            double newX = startRect.getMinX() - diff.getX();
-            newX = Math.min(Math.max(range.getX(), newX), range.getZ());
-            
-            double newY = startRect.getMinY() - diff.getY();
-            newY = Math.min(Math.max(range.getY(), newY), range.getW());
-            
-            drawRect = new Rect(newX, newY, startRect.getWidth(), startRect.getHeight());
+            stat.onDragging(startRect, diff, arg);
             
             showImpl(true);
         });
     }
     
-    private void onCanvasResize(double width, double height) {
+    private void onCanvasResizing(double width, double height) {
         canvas.setWidth(width);
         canvas.setHeight(height);
         
-        drawRect = new Rect(drawRect.getMinX(), drawRect.getMinY(), width, height);
+        if (stat != null) {
+            stat.onResizing(width, height);
+        }
         
         showImpl();
     }
@@ -290,43 +296,35 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         }
     }
     
-    private void resetAll() {
-        imageKvs = null;
-        
-        canvas.setWidth(canvas_hld.getWidth());
-        canvas.setHeight(canvas_hld.getHeight());
-        
-        drawRect = new Rect(0, 0, canvas.getWidth(), canvas.getHeight());
-    }
-    
-    public void show(ImageArg tracks) {
+    public void show(ImageArg args) {
         Platform.runLater(() -> {
-            showImpl(tracks);
+            try {
+                showImpl(args);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
     }
     
     public void showImpl(ImageArg arg) {
-        resetAll();
-        
         this.arg = arg;
+        this.creator = new ImageCreator(arg.cacheSize);
+        this.stat = new Stat(canvas.getWidth(), canvas.getHeight());
         
         setColors(mixed_color_hld, color -> mixedColor = color, this.arg.colors);
         
         List<Element> elements = new LinkedList<>();
         List<CurveBinding<TrackFrame>> curves = new LinkedList<>();
         
-        int id = 0, total = 0;
-        float width = 0, height = 0;
-        int min_layer = 0, max_layer = 0;
         for (Track track : this.arg.tracks) {
             int size = track.frames.size();
             if (size == 0) {
                 continue;
             }
             
-            total = Math.max(total, size);
+            stat.total = Math.max(stat.total, size);
             
-            TrackElement element = new TrackElement(++id, track);
+            TrackElement element = new TrackElement(++stat.id, track);
             elements.add(element);
             
             List<KeyFrame<TrackFrame>> kfs = new LinkedList<>();
@@ -336,18 +334,25 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
                 kf.value = new TrackFrame(element, frame);
                 kfs.add(kf);
                 
-                if ((frame.x + frame.width) > width) {
-                    width = (frame.x + frame.width);
+                if (frame.x < stat.x) {
+                    stat.x = frame.x;
                 }
-                if ((frame.y + frame.height) > height) {
-                    height = (frame.y + frame.height);
+                if (frame.y < stat.y) {
+                    stat.y = frame.y;
                 }
                 
-                if (frame.layer > max_layer) {
-                    max_layer = frame.layer;
+                if ((frame.x + frame.width) > stat.maxX) {
+                    stat.maxX = frame.x + frame.width;
                 }
-                if (frame.layer < min_layer) {
-                    min_layer = frame.layer;
+                if ((frame.y + frame.height) > stat.maxY) {
+                    stat.maxY = frame.y + frame.height;
+                }
+                
+                if (frame.layer > stat.max_layer) {
+                    stat.max_layer = frame.layer;
+                }
+                if (frame.layer < stat.min_layer) {
+                    stat.min_layer = frame.layer;
                 }
             }
             
@@ -363,38 +368,27 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             curves.toArray(new CurveBinding[]{})
         )), true);
         
+        play_btn.setDisable(stat.total <= 1);
+        play_btn.setText(animatorPlayer.isPlaying() ? "暂停" : "播放");
+        prev_btn.setDisable(stat.total <= 1);
+        next_btn.setDisable(stat.total <= 1);
+        
+        layer_chk.setValue(Layer.NONE);
+        layer_sld.setMin(stat.min_layer);
+        layer_sld.setMax(stat.max_layer);
+        layer_sld.setValue(stat.min_layer);
+        
         if (this.arg.drawType == ImageDrawType.FULL) {
-            map = new AoiMap((int) width, (int) height, (int) width + 1, (int) height + 1);
+            map = new AoiMap(stat.width(), stat.height(), stat.width() + 1, stat.height() + 1);
         } else {
-            map = new AoiMap((int) width, (int) height, this.arg.gridX, this.arg.gridY);
+            map = new AoiMap(stat.width(), stat.height(), this.arg.gridX, this.arg.gridY);
         }
         for (Element element : elements) {
             map.add(element);
         }
         imageGetter = new AoiImageGetter(map);
         
-        Point p1 = new Point(this.arg.pivotX - 200, this.arg.pivotY - 200);
-        Point p2 = new Point(this.arg.pivotX + 200, this.arg.pivotY + 200);
-        Point p3 = new Point(
-            this.arg.pivotX + width + 200 - drawRect.getWidth(),
-            this.arg.pivotY + height + 200 - drawRect.getHeight()
-        );
-        range = new Vector4f(
-            Math.min(Math.min(p1.getX(), p2.getX()), p3.getX()),
-            Math.min(Math.min(p1.getY(), p2.getY()), p3.getY()),
-            Math.max(Math.max(p1.getX(), p2.getX()), p3.getX()),
-            Math.max(Math.max(p1.getY(), p2.getY()), p3.getY())
-        );
-        
-        play_btn.setDisable(total <= 1);
-        play_btn.setText(animatorPlayer.isPlaying() ? "暂停" : "播放");
-        prev_btn.setDisable(total <= 1);
-        next_btn.setDisable(total <= 1);
-        
-        layer_cob.setValue(Layer.NONE);
-        layer_sld.setMin(min_layer);
-        layer_sld.setMax(max_layer);
-        layer_sld.setValue(min_layer);
+        stat.onInitial(arg);
         
         showImpl(true);
     }
@@ -418,8 +412,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         }
         elements.clear();
         
-        for (Element element : imageGetter.getImage(drawRect.getX(), drawRect.getY(),
-            drawRect.getWidth(), drawRect.getHeight())) {
+        for (Element element : imageGetter.getImage(stat.drawRect)) {
             if (element.visible()) {
                 TrackElement trackElement = (TrackElement) element;
                 trackElement.setInRange(true);
@@ -443,28 +436,32 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         }
         
         GraphicsContext context = canvas.getGraphicsContext2D();
-        context.clearRect(0, 0, drawRect.getWidth(), drawRect.getHeight());
+        
+        Drawer.clearRect(context, stat.fixedRect());
         
         if (frames == null || frames.isEmpty()) {
             return;
         }
         
-        drawRect(context, 0, 0, drawRect.getWidth(), drawRect.getHeight());
-        drawFrame(context, 1, 1, drawRect.getWidth() - 2, drawRect.getHeight() - 2);
+        Drawer.drawRect(context, stat.fixedRect(), bgColor);
         
         frames.sort(Comparator.comparingInt(x -> x.order));
         for (Frame frame : frames) {
-            if (layer_cob.getValue().check(frame.layer, layer.getValue())) {
-                showFrame(context, frame);
+            if (layer_chk.getValue().check(frame.layer, layer.getValue())) {
+                showFrame(context, frame, stat.drawRect, Color.BLACK);
             }
         }
         
-        drawPivot(context, arg.pivotX, arg.pivotY);
-        drawFrame(context, arg.borderX, arg.borderY, arg.borderW, arg.borderH);
+        Drawer.drawPivot(context, stat.pivot, Color.BLACK);
+        
+        Drawer.drawFrame(context, stat.borderRect, Color.BLACK);
+        Drawer.drawFrame(context, stat.validRect, Color.RED);
+        Drawer.drawFrame(context, stat.rangeRect_relative(), Color.GREEN);
+        Drawer.drawFrame(context, stat.fixedRect_shrink(), Color.BLACK);
     }
     
-    private void showFrame(GraphicsContext context, Frame frame) {
-        Image image = createImage(frame);
+    private void showFrame(GraphicsContext context, Frame frame, Rect drawRect, Color color) {
+        Image image = creator.createImage(frame, mixedColor);
         if (image == null) {
             return;
         }
@@ -494,7 +491,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
             context.restore();
             
-            drawText(context, frame.extra, dx, dy);
+            Drawer.drawText(context, frame.extra, dx, dy, color);
         } else if (drawRect.intersects(imageRect)) {
             if (dx < drawRect.getMinX()) {
                 sx = drawRect.getMinX() - dx;
@@ -538,75 +535,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
             context.restore();
             
-            drawText(context, frame.extra, dx, dy);
+            Drawer.drawText(context, frame.extra, dx, dy, color);
         }
-    }
-    
-    private Image createImage(Frame frame) {
-        if (imageKvs == null && arg.cacheSize > 0) {
-            imageKvs = new LinkedHashMap<Frame, Image>() {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry eldest) {
-                    return size() > arg.cacheSize;
-                }
-            };
-        }
-        
-        Image image = imageKvs != null ? imageKvs.get(frame) : null;
-        if (image == null) {
-            if (frame.image != null) {
-                image = SwingFXUtils.toFXImage(frame.image, null);
-            } else if (frame.getter != null) {
-                image = frame.getter.getImage();
-            }
-            if (image != null && imageKvs != null) {
-                imageKvs.put(frame, image);
-            }
-        }
-        
-        if (image != null && mixedColor != null && frame.mixed) {
-            WritableImage blendImage = new WritableImage((int) frame.width, (int) frame.height);
-            
-            for (int i = 0; i < frame.height; ++i) {
-                for (int j = 0; j < frame.width; ++j) {
-                    int argb_old = image.getPixelReader().getArgb(j, i);
-                    int a = (int) (((argb_old >> 24) & 0xFF) * mixedColor.getOpacity());
-                    int r = (int) (((argb_old >> 16) & 0xFF) * mixedColor.getRed());
-                    int g = (int) (((argb_old >> 8) & 0xFF) * mixedColor.getGreen());
-                    int b = (int) (((argb_old >> 0) & 0xFF) * mixedColor.getBlue());
-                    int argb_new = (a << 24) | (r << 16) | (g << 8) | b;
-                    blendImage.getPixelWriter().setArgb(j, i, argb_new);
-                }
-            }
-            image = blendImage;
-        }
-        
-        return image;
-    }
-    
-    private void drawText(GraphicsContext context, String text, double x, double y) {
-        context.setFill(bgColor != null ? Color.WHITE : Color.BLACK);
-        context.fillText(text, x, y);
-    }
-    
-    private void drawRect(GraphicsContext context, int x, int y, double width, double height) {
-        if (bgColor != null) {
-            context.setFill(bgColor);
-            context.fillRect(x, y, width, height);
-        }
-    }
-    
-    private void drawFrame(GraphicsContext context, double x, double y, double w, double h) {
-        context.setStroke(bgColor != null ? Color.WHITE : Color.BLACK);
-        context.strokeLine(x, y, x + w, y);
-        context.strokeLine(x + w, y, x + w, y + h);
-        context.strokeLine(x + w, y + h, x, y + h);
-        context.strokeLine(x, y + h, x, y);
-    }
-    
-    private void drawPivot(GraphicsContext context, float pivotX, float pivotY) {
-        context.setStroke(bgColor != null ? Color.WHITE : Color.BLACK);
-        context.strokeLine(pivotX - 50, pivotY, pivotX + 50, pivotY);
-        context.strokeLine(pivotX, pivotY - 20, pivotX, pivotY + 20);
     }
 }

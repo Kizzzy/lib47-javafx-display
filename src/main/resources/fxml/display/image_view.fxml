@@ -7,13 +7,16 @@
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 <fx:root type="AnchorPane" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1"
          fx:controller="cn.kizzzy.javafx.display.image.ImageDisplayView">
     <children>
         <VBox spacing="8.0" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="8.0" AnchorPane.rightAnchor="8.0"
               AnchorPane.topAnchor="8.0">
-            <FlowPane VBox.vgrow="NEVER">
+            <FlowPane vgap="4.0" VBox.vgrow="NEVER">
                 <children>
                     <HBox alignment="CENTER_LEFT" spacing="8.0">
                         <CheckBox fx:id="filter_chk" text="去除底色"/>
@@ -40,7 +43,7 @@
                             <LabeledSlider fx:id="scale_sld" max="10.0" min="0.1" name="缩放" value="0.0"/>
                             <Separator orientation="VERTICAL"/>
                             <LabeledSlider fx:id="layer_sld" max="10.0" min="0.0" name="层次" value="10.0"/>
-                            <ChoiceBox fx:id="layer_cob"/>
+                            <ChoiceBox fx:id="layer_chk"/>
                             <Separator orientation="VERTICAL"/>
                         </children>
                     </HBox>
@@ -56,6 +59,11 @@
                     </HBox>
                 </children>
             </FlowPane>
+            <HBox>
+                <children>
+                    <LabeledSlider fx:id="frame_sld" max="10.0" min="0.0" name="帧" value="0.0" HBox.hgrow="ALWAYS"/>
+                </children>
+            </HBox>
             <HBox fx:id="canvas_hld" VBox.vgrow="ALWAYS">
                 <children>
                     <Canvas fx:id="canvas" height="400.0" width="400.0"/>

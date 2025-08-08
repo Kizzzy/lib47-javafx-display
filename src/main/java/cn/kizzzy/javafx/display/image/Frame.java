@@ -6,23 +6,25 @@ public class Frame {
     public int layer;
     public int order;
     
-    public float x;
-    public float y;
-    public float z;
+    public double x;
+    public double y;
+    public double z;
     
-    public float time = 167;
+    public double time = 167;
     
-    public float width;
-    public float height;
+    public double width;
+    public double height;
     
-    public float rotateX;
-    public float rotateY;
-    public float rotateZ;
+    public double rotateX;
+    public double rotateY;
+    public double rotateZ;
     
     public boolean flipX;
     public boolean flipY;
     
     public boolean mixed;
+    public boolean empty;
+    
     public BufferedImage image;
     public ImageGetter getter;
     public String extra;

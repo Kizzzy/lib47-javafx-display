@@ -23,14 +23,14 @@ public class AoiMap {
         return areas.FindArea(position.getX(), position.getY());
     }
     
-    public void add(Element frame) {
-        getCurrentArea(frame).add(frame);
-        enterView(frame);
+    public void add(Element element) {
+        getCurrentArea(element).add(element);
+        enterView(element);
     }
     
-    public void remove(Element object) {
-        getCurrentArea(object).remove(object);
-        leaveView(object);
+    public void remove(Element element) {
+        getCurrentArea(element).remove(element);
+        leaveView(element);
     }
     
     public List<Element> getElement(Element element) {
@@ -64,9 +64,9 @@ public class AoiMap {
         }
     }
     
-    public void leaveView(Element object) {
-        List<Element> list = getElement(object);
-        leaveView(list, object);
+    public void leaveView(Element element) {
+        List<Element> list = getElement(element);
+        leaveView(list, element);
     }
     
     private void leaveView(List<Element> list, Element target) {

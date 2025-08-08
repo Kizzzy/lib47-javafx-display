@@ -63,4 +63,13 @@ public class Rect extends Vector4f {
             r.getMinX() < getMaxX() &&
             r.getMinY() < getMaxY();
     }
+    
+    public Rect move(Rect r) {
+        return new Rect(
+            getX() + r.getX(),
+            getY() + r.getY(),
+            getWidth() + r.getWidth(),
+            getHeight() + r.getHeight()
+        );
+    }
 }
