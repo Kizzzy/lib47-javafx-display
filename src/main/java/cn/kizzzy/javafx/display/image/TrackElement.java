@@ -3,25 +3,35 @@ package cn.kizzzy.javafx.display.image;
 import cn.kizzzy.javafx.display.image.aoi.Element;
 import cn.kizzzy.javafx.display.image.aoi.Vector3;
 
-public class TrackElement implements Element {
+public class TrackElement implements Element, Comparable<TrackElement> {
     
     private final int id;
     private final Track track;
     
-    private Frame firstFrame;
-    private Frame lastFrame;
+    private Track.StaticFrame sf_first;
+    private Track.StaticFrame sf_last;
     
-    private Frame frame;
+    private Track.DynamicFrame df_first;
+    private Track.DynamicFrame df_last;
+    
+    private Track.StaticFrame static_frame;
+    private Track.DynamicFrame dynamic_frame;
     
     private boolean inRange;
-    private boolean valid = true;
     
     public TrackElement(int id, Track track) {
         this.id = id;
         this.track = track;
         
-        firstFrame = track.frames.get(0);
-        lastFrame = track.frames.get(track.frames.size() - 1);
+        if (!track.sfs.isEmpty()) {
+            sf_first = track.sfs.get(0);
+            sf_last = track.sfs.get(track.sfs.size() - 1);
+        }
+        
+        if (!track.dfs.isEmpty()) {
+            df_first = track.dfs.get(0);
+            df_last = track.dfs.get(track.dfs.size() - 1);
+        }
     }
     
     @Override
@@ -36,10 +46,7 @@ public class TrackElement implements Element {
     
     @Override
     public Vector3 getPosition() {
-        if (frame == null) {
-            return new Vector3((int) firstFrame.x, (int) firstFrame.y, 0);
-        }
-        return new Vector3((int) frame.x, (int) frame.y, 0);
+        return new Vector3((int) sf_first.x, (int) sf_first.y, 0);
     }
     
     @Override
@@ -71,21 +78,36 @@ public class TrackElement implements Element {
     }
     
     public boolean isValid() {
-        return valid;
-    }
-    
-    public void setValid(boolean valid) {
-        this.valid = valid;
-    }
-    
-    public Frame getFrame() {
-        return frame;
-    }
-    
-    public void setFrame(Frame frame) {
-        if (track.loopType == LoopType.ONCE_FADE && this.frame == lastFrame && frame == firstFrame) {
-            valid = false;
+        if (track.loopType == LoopType.ONCE_FADE) {
+            if (dynamic_frame != null && dynamic_frame.empty) {
+                return false;
+            }
+            
+            if (static_frame != null && static_frame.empty) {
+                return false;
+            }
         }
-        this.frame = frame;
+        return true;
+    }
+    
+    public Track.StaticFrame getStaticFrame() {
+        return static_frame;
+    }
+    
+    public void setStaticFrame(Track.StaticFrame staticFrame) {
+        this.static_frame = staticFrame;
+    }
+    
+    public Track.DynamicFrame getDynamicFrame() {
+        return dynamic_frame;
+    }
+    
+    public void setDynamicFrame(Track.DynamicFrame dynamicFrame) {
+        this.dynamic_frame = dynamicFrame;
+    }
+    
+    @Override
+    public int compareTo(TrackElement o) {
+        return static_frame.order - o.static_frame.order;
     }
 }

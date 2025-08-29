@@ -14,7 +14,10 @@ public class VisionElement implements Element {
     
     private Vector3 position;
     
-    private Map<Integer, Element> visibleKvs = new HashMap<>();
+    private Map<Integer, Element> visibleKvs
+        = new HashMap<>();
+    
+    private volatile boolean dirty;
     
     public VisionElement(int id, Vector3 position) {
         this.id = id;
@@ -45,6 +48,8 @@ public class VisionElement implements Element {
     public void enterView(Element object) {
         if (object.visible()) {
             visibleKvs.put(object.getId(), object);
+            
+            dirty = true;
         }
     }
     
@@ -57,10 +62,19 @@ public class VisionElement implements Element {
     public void leaveView(Element object) {
         if (object.visible()) {
             visibleKvs.remove(object.getId());
+            
+            dirty = true;
         }
     }
     
     public List<Element> getAll() {
         return new LinkedList<>(visibleKvs.values());
+    }
+    
+    public void update() {
+        if (dirty) {
+            dirty = false;
+            // todo
+        }
     }
 }

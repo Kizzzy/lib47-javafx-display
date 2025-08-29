@@ -2,32 +2,32 @@ package cn.kizzzy.javafx.display.image.aoi;
 
 public class Vector2f {
     
-    private double x;
+    private float x;
     
-    private double y;
+    private float y;
     
-    public Vector2f(double x) {
+    public Vector2f(float x) {
         this(x, 0);
     }
     
-    public Vector2f(double x, double y) {
+    public Vector2f(float x, float y) {
         this.x = x;
         this.y = y;
     }
     
-    public double getX() {
+    public float getX() {
         return x;
     }
     
-    public void setX(double x) {
+    public void setX(float x) {
         this.x = x;
     }
     
-    public double getY() {
+    public float getY() {
         return y;
     }
     
-    public void setY(double y) {
+    public void setY(float y) {
         this.y = y;
     }
 }

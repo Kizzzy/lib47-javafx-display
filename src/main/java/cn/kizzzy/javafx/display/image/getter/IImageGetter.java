@@ -10,5 +10,5 @@ public interface IImageGetter<Image> {
         return getImage(r.getX(), r.getY(), r.getWidth(), r.getHeight());
     }
     
-    List<Image> getImage(double x, double y, double width, double height);
+    List<Image> getImage(float x, float y, float width, float height);
 }

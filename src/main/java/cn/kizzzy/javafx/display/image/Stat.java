@@ -4,19 +4,19 @@ import cn.kizzzy.helper.MathHelper;
 
 public class Stat {
     
-    private double canvas_width;
-    private double canvas_height;
+    private float canvas_width;
+    private float canvas_height;
     
-    private double pivot_x;
-    private double pivot_y;
+    private float pivot_x;
+    private float pivot_y;
     
     public int id = 0;
     public int total = 0;
     
-    public double x = Integer.MAX_VALUE;
-    public double y = Integer.MAX_VALUE;
-    public double maxX = 0;
-    public double maxY = 0;
+    public float x = Integer.MAX_VALUE;
+    public float y = Integer.MAX_VALUE;
+    public float maxX = 0;
+    public float maxY = 0;
     
     public int min_layer = 0;
     public int max_layer = 0;
@@ -28,7 +28,7 @@ public class Stat {
     public Rect validRect;
     public Rect borderRect;
     
-    public Stat(double canvas_width, double canvas_height) {
+    public Stat(float canvas_width, float canvas_height) {
         this.canvas_width = canvas_width;
         this.canvas_height = canvas_height;
         
@@ -54,12 +54,12 @@ public class Stat {
             .move(new Rect(1, 1, -2, -2));
     }
     
-    public Rect wholeRect(double pivotX, double pivotY) {
+    public Rect wholeRect(float pivotX, float pivotY) {
         return new Rect(x, y, width(), height())
             .move(new Rect(pivotX, pivotY, 0, 0));
     }
     
-    public Rect rangeRect(double pivotX, double pivotY, int range) {
+    public Rect rangeRect(float pivotX, float pivotY, int range) {
         return wholeRect(pivotX, pivotY)
             .move(new Rect(-range, -range, range * 2, range * 2));
     }
@@ -82,10 +82,10 @@ public class Stat {
     }
     
     public void onDragging(Rect startRect, Point diff, ImageArg arg) {
-        double newX = startRect.getMinX() - diff.getX();
+        float newX = startRect.getMinX() - diff.getX();
         newX = MathHelper.clamp(newX, rangeRect.getMinX(), rangeRect.getMaxX() - startRect.getWidth());
         
-        double newY = startRect.getMinY() - diff.getY();
+        float newY = startRect.getMinY() - diff.getY();
         newY = MathHelper.clamp(newY, rangeRect.getMinY(), rangeRect.getMaxY() - startRect.getHeight());
         
         drawRect = new Rect(newX, newY, startRect.getWidth(), startRect.getHeight());
@@ -98,7 +98,7 @@ public class Stat {
         );
     }
     
-    public void onResizing(double width, double height) {
+    public void onResizing(float width, float height) {
         canvas_width = width;
         canvas_height = height;
         

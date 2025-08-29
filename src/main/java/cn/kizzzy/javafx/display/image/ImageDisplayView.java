@@ -13,9 +13,9 @@ import cn.kizzzy.javafx.JavafxControlParameter;
 import cn.kizzzy.javafx.JavafxView;
 import cn.kizzzy.javafx.control.LabeledSlider;
 import cn.kizzzy.javafx.display.Stoppable;
-import cn.kizzzy.javafx.display.image.animation.LinerTangleMod;
-import cn.kizzzy.javafx.display.image.animation.TrackFrame;
-import cn.kizzzy.javafx.display.image.animation.TrackFrameProcessor;
+import cn.kizzzy.javafx.display.image.animation.DfLinearTangleMod;
+import cn.kizzzy.javafx.display.image.animation.DfTrackElementProcessor;
+import cn.kizzzy.javafx.display.image.animation.SfTrackElementProcessor;
 import cn.kizzzy.javafx.display.image.aoi.AoiMap;
 import cn.kizzzy.javafx.display.image.aoi.Element;
 import cn.kizzzy.javafx.display.image.getter.AoiImageGetter;
@@ -31,16 +31,15 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.scene.transform.Rotate;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.net.URL;
-import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -49,13 +48,16 @@ import java.util.function.Consumer;
 abstract class ImageDisplayViewBase extends JavafxView {
     
     @FXML
-    protected CheckBox filter_chk;
-    
-    @FXML
     protected HBox bg_color_hld;
     
     @FXML
     protected HBox mixed_color_hld;
+    
+    @FXML
+    protected CheckBox filter_chk;
+    
+    @FXML
+    protected CheckBox show_tips_chk;
     
     @FXML
     protected Button export_button;
@@ -122,18 +124,19 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     private IImageGetter<Element> imageGetter;
     
     private AnimatorPlayer animatorPlayer;
-    private TrackFrameProcessor frameProcessor;
+    private SfTrackElementProcessor sfProcessor;
+    private DfTrackElementProcessor dfProcessor;
     
-    private List<TrackElement> elements;
-    private List<Frame> frames;
+    private List<TrackElement> rangeElements;
+    private List<TrackElement> visibleElements;
     
     private ImageArg arg;
     private ImageCreator creator;
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        elements = new LinkedList<>();
-        frames = new LinkedList<>();
+        rangeElements = new LinkedList<>();
+        visibleElements = new LinkedList<>();
         
         filter_chk.selectedProperty().addListener((observable, oldValue, newValue) -> {
             // todo
@@ -152,7 +155,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         layer = new SimpleIntegerProperty();
         layer.addListener((observable, oldValue, newValue) -> {
             if (layer_chk.getValue() != Layer.NONE) {
-                showImpl();
+                drawImpl();
             }
         });
         
@@ -162,13 +165,14 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         
         layer_chk.getItems().addAll(Layer.values());
         layer_chk.valueProperty().addListener((observable, oldValue, newValue) -> {
-            showImpl();
+            drawImpl();
         });
         
-        frameProcessor = new TrackFrameProcessor(this::showFrames);
+        sfProcessor = new SfTrackElementProcessor(this::drawImpl);
+        dfProcessor = new DfTrackElementProcessor();
         
         Animator animator = new Animator();
-        animator.getStateInfo().callback = frameProcessor;
+        animator.getStateInfo().callback = sfProcessor;
         
         animatorPlayer = new AnimatorPlayer(animator);
         
@@ -209,7 +213,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         canvas.setOnMouseDragEntered(event -> {
             if (draggingThread == null) {
                 draggingThread = new CanvasDraggingThread(
-                    new Point(event.getX(), event.getY()),
+                    new Point((float) event.getX(), (float) event.getY()),
                     stat.drawRect,
                     this::onCanvasDragging
                 );
@@ -218,7 +222,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         });
         canvas.setOnMouseDragged(event -> {
             if (draggingThread != null) {
-                draggingThread.setCurrent(new Point(event.getX(), event.getY()));
+                draggingThread.setCurrent(new Point((float) event.getX(), (float) event.getY()));
             }
         });
         canvas.setOnMouseDragReleased(event -> {
@@ -257,7 +261,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         Platform.runLater(() -> {
             stat.onDragging(startRect, diff, arg);
             
-            showImpl(true);
+            drawImpl(true);
         });
     }
     
@@ -266,10 +270,10 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         canvas.setHeight(height);
         
         if (stat != null) {
-            stat.onResizing(width, height);
+            stat.onResizing((float) width, (float) height);
         }
         
-        showImpl();
+        drawImpl();
     }
     
     public void setColors(Pane panel, Consumer<Color> callback, String... colors) {
@@ -289,7 +293,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             pane.setStyle("-fx-background-color: " + c + ";");
             pane.setOnMouseClicked(event -> {
                 callback.accept(color);
-                showImpl();
+                drawImpl();
             });
             
             panel.getChildren().add(pane);
@@ -309,30 +313,58 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     public void showImpl(ImageArg arg) {
         this.arg = arg;
         this.creator = new ImageCreator(arg.cacheSize);
-        this.stat = new Stat(canvas.getWidth(), canvas.getHeight());
+        this.stat = new Stat((float) canvas.getWidth(), (float) canvas.getHeight());
         
         setColors(mixed_color_hld, color -> mixedColor = color, this.arg.colors);
         
         List<Element> elements = new LinkedList<>();
-        List<CurveBinding<TrackFrame>> curves = new LinkedList<>();
+        List<CurveBinding<TrackElementBinder>> curves = new LinkedList<>();
         
         for (Track track : this.arg.tracks) {
-            int size = track.frames.size();
+            int size = track.sfs.size();
             if (size == 0) {
                 continue;
             }
             
             stat.total = Math.max(stat.total, size);
             
+            boolean first = true;
+            float track_start_time = 0;
+            
             TrackElement element = new TrackElement(++stat.id, track);
             elements.add(element);
             
-            List<KeyFrame<TrackFrame>> kfs = new LinkedList<>();
-            for (Frame frame : track.frames) {
-                KeyFrame<TrackFrame> kf = new KeyFrame<>();
+            List<KeyFrame<TrackElementBinder>> dfKfs = new ArrayList<>();
+            for (Track.DynamicFrame df : track.dfs) {
+                if (first) {
+                    first = false;
+                    track_start_time = df.time;
+                }
+                
+                KeyFrame<TrackElementBinder> kf = new KeyFrame<>();
+                kf.time = df.time;
+                kf.value = new TrackElementBinder(element, null, df);
+                dfKfs.add(kf);
+            }
+            
+            if (dfKfs.size() > 0) {
+                curves.add(new CurveBinding<>(
+                    new AnimationCurve<>(
+                        dfKfs.toArray(new KeyFrame[]{}),
+                        new DfLinearTangleMod(),
+                        false
+                    ),
+                    dfProcessor,
+                    track_start_time
+                ));
+            }
+            
+            List<KeyFrame<TrackElementBinder>> sfKfs = new LinkedList<>();
+            for (Track.StaticFrame frame : track.sfs) {
+                KeyFrame<TrackElementBinder> kf = new KeyFrame<>();
                 kf.time = (long) frame.time;
-                kf.value = new TrackFrame(element, frame);
-                kfs.add(kf);
+                kf.value = new TrackElementBinder(element, frame, null);
+                sfKfs.add(kf);
                 
                 if (frame.x < stat.x) {
                     stat.x = frame.x;
@@ -356,17 +388,21 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
                 }
             }
             
-            curves.add(new CurveBinding<>(
-                new AnimationCurve<>(
-                    kfs.toArray(new KeyFrame[]{}),
-                    track.liner ? new LinerTangleMod() : new ConstTangentMode<>()
-                ), frameProcessor
-            ));
+            if (sfKfs.size() > 0) {
+                curves.add(new CurveBinding<>(
+                    new AnimationCurve<>(
+                        sfKfs.toArray(new KeyFrame[]{}),
+                        new ConstTangentMode<>(),
+                        true
+                    ),
+                    sfProcessor,
+                    track_start_time
+                ));
+            }
         }
         
-        animatorPlayer.getAnimator().setController(new AnimationController(new AnimationClip(
-            curves.toArray(new CurveBinding[]{})
-        )), true);
+        animatorPlayer.getAnimator().setController(new AnimationController(
+            new AnimationClip(curves.toArray(new CurveBinding[]{}))), true);
         
         play_btn.setDisable(stat.total <= 1);
         play_btn.setText(animatorPlayer.isPlaying() ? "暂停" : "播放");
@@ -390,34 +426,34 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         
         stat.onInitial(arg);
         
-        showImpl(true);
+        drawImpl(true);
     }
     
-    private void showImpl() {
-        showImpl(false);
+    private void drawImpl() {
+        drawImpl(false);
     }
     
-    private void showImpl(boolean reset) {
+    private void drawImpl(boolean reset) {
         if (map == null) {
             return;
         }
         
         if (!reset) {
-            showFrames(frames, false);
+            drawImpl(visibleElements, false);
             return;
         }
         
-        for (TrackElement element : elements) {
+        for (TrackElement element : rangeElements) {
             element.setInRange(false);
         }
-        elements.clear();
+        rangeElements.clear();
         
         for (Element element : imageGetter.getImage(stat.drawRect)) {
             if (element.visible()) {
                 TrackElement trackElement = (TrackElement) element;
                 trackElement.setInRange(true);
                 
-                elements.add(trackElement);
+                rangeElements.add(trackElement);
             }
         }
         
@@ -426,29 +462,29 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         }
     }
     
-    private void showFrames(List<Frame> frames) {
-        showFrames(frames, true);
+    private void drawImpl(List<TrackElement> frames) {
+        drawImpl(frames, true);
     }
     
-    private void showFrames(List<Frame> frames, boolean update) {
+    private void drawImpl(List<TrackElement> elements, boolean update) {
         if (update) {
-            this.frames = frames;
+            this.visibleElements = elements;
         }
         
         GraphicsContext context = canvas.getGraphicsContext2D();
         
         Drawer.clearRect(context, stat.fixedRect());
         
-        if (frames == null || frames.isEmpty()) {
+        if (elements == null || elements.isEmpty()) {
             return;
         }
         
         Drawer.drawRect(context, stat.fixedRect(), bgColor);
         
-        frames.sort(Comparator.comparingInt(x -> x.order));
-        for (Frame frame : frames) {
-            if (layer_chk.getValue().check(frame.layer, layer.getValue())) {
-                showFrame(context, frame, stat.drawRect, Color.BLACK);
+        Collections.sort(elements);
+        for (TrackElement element : elements) {
+            if (layer_chk.getValue().check(element.getStaticFrame().layer, layer.getValue())) {
+                Drawer.drawElement(context, element, stat.drawRect, creator, mixedColor, show_tips_chk.isSelected(), arg);
             }
         }
         
@@ -458,84 +494,5 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         Drawer.drawFrame(context, stat.validRect, Color.RED);
         Drawer.drawFrame(context, stat.rangeRect_relative(), Color.GREEN);
         Drawer.drawFrame(context, stat.fixedRect_shrink(), Color.BLACK);
-    }
-    
-    private void showFrame(GraphicsContext context, Frame frame, Rect drawRect, Color color) {
-        Image image = creator.createImage(frame, mixedColor);
-        if (image == null) {
-            return;
-        }
-        
-        double sx = 0;
-        double sy = 0;
-        double sw = frame.width;
-        double sh = frame.height;
-        
-        double dx = arg.pivotX + frame.x + (frame.flipX ? frame.width : 0);
-        double dy = arg.pivotX + frame.y + (frame.flipY ? frame.height : 0);
-        double dw = frame.width * (frame.flipX ? -1 : 1);
-        double dh = frame.height * (frame.flipY ? -1 : 1);
-        
-        Rect imageRect = new Rect(dx, dy, dw, dh);
-        if (drawRect.contains(imageRect)) {
-            dx -= drawRect.getMinX();
-            dy -= drawRect.getMinY();
-            
-            context.save();
-            Rotate rotate = new Rotate(frame.rotateZ, frame.x + frame.width / 2, frame.y + frame.height / 2);
-            context.setTransform(
-                rotate.getMxx(), rotate.getMyx(),
-                rotate.getMxy(), rotate.getMyy(),
-                rotate.getTx(), rotate.getTy()
-            );
-            context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
-            context.restore();
-            
-            Drawer.drawText(context, frame.extra, dx, dy, color);
-        } else if (drawRect.intersects(imageRect)) {
-            if (dx < drawRect.getMinX()) {
-                sx = drawRect.getMinX() - dx;
-                sw -= sx;
-                
-                dx = 0;
-                dw = sw;
-            } else if ((dx + dw) > drawRect.getMaxX()) {
-                sx = 0;
-                sw = drawRect.getMaxX() - dx;
-                
-                dx -= drawRect.getMinX();
-                dw = sw;
-            } else {
-                dx -= drawRect.getMinX();
-            }
-            
-            if (dy < drawRect.getMinY()) {
-                sy = drawRect.getMinY() - dy;
-                sh -= sy;
-                
-                dy = 0;
-                dh = sh;
-            } else if ((dy + dh) > drawRect.getMaxY()) {
-                sy = 0;
-                sh = drawRect.getMaxY() - dy;
-                
-                dy -= drawRect.getMinY();
-                dh = sh;
-            } else {
-                dy -= drawRect.getMinY();
-            }
-            
-            context.save();
-            Rotate rotate = new Rotate(frame.rotateZ, frame.x + frame.width / 2, frame.y + frame.height / 2);
-            context.setTransform(
-                rotate.getMxx(), rotate.getMyx(),
-                rotate.getMxy(), rotate.getMyy(),
-                rotate.getTx(), rotate.getTy()
-            );
-            context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
-            context.restore();
-            
-            Drawer.drawText(context, frame.extra, dx, dy, color);
-        }
     }
 }

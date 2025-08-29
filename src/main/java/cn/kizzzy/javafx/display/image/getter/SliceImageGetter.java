@@ -1,7 +1,7 @@
 package cn.kizzzy.javafx.display.image.getter;
 
-import cn.kizzzy.javafx.display.image.Frame;
 import cn.kizzzy.javafx.display.image.FrameElement;
+import cn.kizzzy.javafx.display.image.Track;
 import cn.kizzzy.javafx.display.image.aoi.Element;
 
 import java.awt.image.BufferedImage;
@@ -34,7 +34,7 @@ public class SliceImageGetter implements IImageGetter<Element> {
     }
     
     @Override
-    public List<Element> getImage(double x, double y, double width, double height) {
+    public List<Element> getImage(float x, float y, float width, float height) {
         int minX = (int) Math.floor(x / blockX);
         int minY = (int) Math.floor(y / blockY);
         
@@ -55,7 +55,7 @@ public class SliceImageGetter implements IImageGetter<Element> {
                     
                     BufferedImage subImage = bufferedImage.getSubimage(sx, sy, sw, sh);
                     if (subImage != null) {
-                        Frame frame = new Frame();
+                        Track.StaticFrame frame = new Track.StaticFrame();
                         frame.x = sx;
                         frame.y = sy;
                         frame.width = sw;

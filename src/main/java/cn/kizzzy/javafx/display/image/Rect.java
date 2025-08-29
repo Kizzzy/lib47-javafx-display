@@ -4,47 +4,47 @@ import cn.kizzzy.javafx.display.image.aoi.Vector4f;
 
 public class Rect extends Vector4f {
     
-    public Rect(double x, double y, double z, double w) {
+    public Rect(float x, float y, float z, float w) {
         super(x, y, z, w);
     }
     
-    public double getWidth() {
+    public float getWidth() {
         return getZ();
     }
     
-    public void setWidth(double width) {
+    public void setWidth(float width) {
         setZ(width);
     }
     
-    public double getHeight() {
+    public float getHeight() {
         return getW();
     }
     
-    public void setHeight(double height) {
+    public void setHeight(float height) {
         setW(height);
     }
     
-    public double getMinX() {
+    public float getMinX() {
         return getX();
     }
     
-    public double getMinY() {
+    public float getMinY() {
         return getY();
     }
     
-    public double getMaxX() {
+    public float getMaxX() {
         return getMinX() + getWidth();
     }
     
-    public double getMaxY() {
+    public float getMaxY() {
         return getMinY() + getHeight();
     }
     
-    public double getCenterX() {
+    public float getCenterX() {
         return getMinX() + getWidth() / 2;
     }
     
-    public double getCenterY() {
+    public float getCenterY() {
         return getMinY() + getHeight() / 2;
     }
     

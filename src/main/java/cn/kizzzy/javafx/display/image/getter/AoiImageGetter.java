@@ -17,7 +17,7 @@ public class AoiImageGetter implements IImageGetter<Element> {
     }
     
     @Override
-    public List<Element> getImage(double x, double y, double width, double height) {
+    public List<Element> getImage(float x, float y, float width, float height) {
         final List<Element> images = new LinkedList<>();
         
         List<Area> areas = map.getAreas(new Vector4f(x, y, width, height));

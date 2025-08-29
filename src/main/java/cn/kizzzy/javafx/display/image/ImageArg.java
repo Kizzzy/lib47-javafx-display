@@ -17,10 +17,6 @@ public class ImageArg {
     public float borderW;
     public float borderH;
     
-    public float interval = 0.16f;
-    
-    public boolean loop;
-    
     public int cacheSize;
     
     public ImageDrawType drawType

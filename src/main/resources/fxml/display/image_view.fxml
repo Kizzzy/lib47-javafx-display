@@ -19,8 +19,6 @@
             <FlowPane vgap="4.0" VBox.vgrow="NEVER">
                 <children>
                     <HBox alignment="CENTER_LEFT" spacing="8.0">
-                        <CheckBox fx:id="filter_chk" text="去除底色"/>
-                        <Separator orientation="VERTICAL"/>
                         <HBox alignment="CENTER_LEFT" layoutX="192.0" layoutY="10.0" minHeight="-Infinity"
                               minWidth="-Infinity">
                             <children>
@@ -35,6 +33,10 @@
                                 <HBox fx:id="mixed_color_hld" minHeight="24.0" spacing="8.0" HBox.hgrow="ALWAYS"/>
                             </children>
                         </HBox>
+                        <Separator layoutX="205.0" layoutY="10.0" orientation="VERTICAL"/>
+                        <CheckBox fx:id="filter_chk" text="去除底色"/>
+                        <Separator orientation="VERTICAL"/>
+                        <CheckBox fx:id="show_tips_chk" layoutX="190.0" layoutY="14.0" text="显示提示"/>
                         <Separator layoutX="178.0" layoutY="10.0" orientation="VERTICAL"/>
                         <Button fx:id="export_button" mnemonicParsing="false" text="导出"/>
                     </HBox>

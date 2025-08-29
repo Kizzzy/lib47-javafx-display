@@ -3,29 +3,32 @@ package cn.kizzzy.javafx.display.image.animation;
 import cn.kizzzy.animations.AnimatorCallback;
 import cn.kizzzy.animations.IProcessor;
 import cn.kizzzy.animations.StateInfo;
-import cn.kizzzy.javafx.display.image.Frame;
+import cn.kizzzy.javafx.display.image.TrackElement;
+import cn.kizzzy.javafx.display.image.TrackElementBinder;
 import javafx.application.Platform;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class TrackFrameProcessor implements IProcessor<TrackFrame>, AnimatorCallback {
+public class SfTrackElementProcessor implements IProcessor<TrackElementBinder>, AnimatorCallback {
     
-    private final Consumer<List<Frame>> consumer;
+    private final List<TrackElement> frames
+        = new LinkedList<>();
     
-    private final List<Frame> frames = new LinkedList<>();
+    private final Consumer<List<TrackElement>> consumer;
     
-    public TrackFrameProcessor(Consumer<List<Frame>> consumer) {
+    public SfTrackElementProcessor(Consumer<List<TrackElement>> consumer) {
         this.consumer = consumer;
     }
     
     @Override
-    public void process(StateInfo stateInfo, TrackFrame value) {
-        value.element.setFrame(value.frame);
+    public void process(StateInfo stateInfo, TrackElementBinder value) {
+        value.element.setStaticFrame(value.sf);
+        
         if (value.element.isInRange() && value.element.isValid()) {
             synchronized (frames) {
-                frames.add(value.frame);
+                frames.add(value.element);
             }
         }
     }
@@ -40,7 +43,7 @@ public class TrackFrameProcessor implements IProcessor<TrackFrame>, AnimatorCall
     @Override
     public void afterUpdate() {
         Platform.runLater(() -> {
-            List<Frame> temp = null;
+            List<TrackElement> temp = null;
             synchronized (frames) {
                 temp = new LinkedList<>(frames);
             }

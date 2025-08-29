@@ -27,7 +27,7 @@ public class ImageDisplay implements ImageDisplayLoader {
         if (data != null) {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(data));
             if (image != null) {
-                Frame frame = new Frame();
+                Track.StaticFrame frame = new Track.StaticFrame();
                 frame.x = 0;
                 frame.y = 0;
                 frame.width = image.getWidth();
@@ -35,7 +35,7 @@ public class ImageDisplay implements ImageDisplayLoader {
                 frame.image = image;
                 
                 Track track = new Track();
-                track.frames.add(frame);
+                track.sfs.add(frame);
                 
                 ImageArg tracks = new ImageArg();
                 tracks.tracks.add(track);

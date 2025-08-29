@@ -21,7 +21,7 @@ public class CacheImageGetter<Image> implements IImageGetter<Image> {
     }
     
     @Override
-    public List<Image> getImage(double x, double y, double width, double height) {
+    public List<Image> getImage(float x, float y, float width, float height) {
         return null;
     }
 }

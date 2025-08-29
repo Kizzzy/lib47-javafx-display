@@ -1,7 +1,10 @@
 package cn.kizzzy.javafx.display.image;
 
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
 
 public class Drawer {
     
@@ -34,8 +37,107 @@ public class Drawer {
         }
     }
     
-    public static void drawText(GraphicsContext context, String text, double x, double y, Color color) {
+    public static void drawText(GraphicsContext context, String text, float x, float y, Color color) {
         context.setFill(color);
         context.fillText(text, x, y);
+    }
+    
+    public static void drawElement(GraphicsContext context, TrackElement element, Rect drawRect, ImageCreator creator, Color mixedColor, boolean showTips, ImageArg arg) {
+        Track.StaticFrame sf = element.getStaticFrame();
+        Track.DynamicFrame df = element.getDynamicFrame();
+        
+        Image image = creator.createImage(sf, mixedColor);
+        if (image == null) {
+            return;
+        }
+        if (df != null) {
+            sf.mixed = true;
+            image = creator.createImage(sf,
+                new Color(df.color_r / 255.0, df.color_g / 255.0, df.color_b / 255.0, df.color_a));
+        }
+        
+        float df_x = (df == null ? 0 : df.x) + arg.pivotX;
+        float df_y = (df == null ? 0 : df.y) + arg.pivotY;
+        
+        float df_scale_x = df == null ? 1.0f : df.scale_x;
+        float df_scale_y = df == null ? 1.0f : df.scale_y;
+        
+        boolean flip_x = df != null && df.scale_x < 0;
+        boolean flip_y = df != null && df.scale_y < 0;
+        
+        float sx = 0;
+        float sy = 0;
+        float sw = sf.width;
+        float sh = sf.height;
+        
+        float dx = df_x + sf.x + (flip_x ? sf.width : 0);
+        float dy = df_y + sf.y + (flip_y ? sf.height : 0);
+        float dw = sf.width * (flip_x ? -1 : 1);
+        float dh = sf.height * (flip_y ? -1 : 1);
+        
+        Rect imageRect = new Rect(dx, dy, dw, dh);
+        if (drawRect.contains(imageRect)) {
+            dx -= drawRect.getMinX();
+            dy -= drawRect.getMinY();
+        } else if (drawRect.intersects(imageRect)) {
+            if (dx < drawRect.getMinX()) {
+                sx = drawRect.getMinX() - dx;
+                sw -= sx;
+                
+                dx = 0;
+                dw = sw;
+            } else if ((dx + dw) > drawRect.getMaxX()) {
+                sx = 0;
+                sw = drawRect.getMaxX() - dx;
+                
+                dx -= drawRect.getMinX();
+                dw = sw;
+            } else {
+                dx -= drawRect.getMinX();
+            }
+            
+            if (dy < drawRect.getMinY()) {
+                sy = drawRect.getMinY() - dy;
+                sh -= sy;
+                
+                dy = 0;
+                dh = sh;
+            } else if ((dy + dh) > drawRect.getMaxY()) {
+                sy = 0;
+                sh = drawRect.getMaxY() - dy;
+                
+                dy -= drawRect.getMinY();
+                dh = sh;
+            } else {
+                dy -= drawRect.getMinY();
+            }
+        }
+        
+        context.save();
+        
+        Scale scale = new Scale(df_scale_x, df_scale_y);
+        context.setTransform(
+            scale.getMxx(), scale.getMyx(),
+            scale.getMxy(), scale.getMyy(),
+            scale.getTx(), scale.getTy()
+        );
+        
+        float angle = df == null ? 0 : df.rotate_z;
+        float pivot_x = dx + dw / 2;
+        float pivot_y = dy + dh / 2;
+        
+        Rotate rotate = new Rotate(angle, pivot_x, pivot_y);
+        context.setTransform(
+            rotate.getMxx(), rotate.getMyx(),
+            rotate.getMxy(), rotate.getMyy(),
+            rotate.getTx(), rotate.getTy()
+        );
+        
+        context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
+        context.restore();
+        
+        if (showTips) {
+            drawText(context, sf.extra, dx, dy, Color.BLACK);
+        }
     }
 }

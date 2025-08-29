@@ -4,7 +4,7 @@ import cn.kizzzy.javafx.display.image.aoi.Vector2f;
 
 public class Point extends Vector2f {
     
-    public Point(double x, double y) {
+    public Point(float x, float y) {
         super(x, y);
     }
     
