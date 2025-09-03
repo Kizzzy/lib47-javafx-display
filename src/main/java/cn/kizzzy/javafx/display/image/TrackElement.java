@@ -78,16 +78,7 @@ public class TrackElement implements Element, Comparable<TrackElement> {
     }
     
     public boolean isValid() {
-        if (track.loopType == LoopType.ONCE_FADE) {
-            if (dynamic_frame != null && dynamic_frame.empty) {
-                return false;
-            }
-            
-            if (static_frame != null && static_frame.empty) {
-                return false;
-            }
-        }
-        return true;
+        return static_frame != null;
     }
     
     public Track.StaticFrame getStaticFrame() {

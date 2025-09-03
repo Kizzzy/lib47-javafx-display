@@ -3,12 +3,14 @@ package cn.kizzzy.javafx.display.image;
 import cn.kizzzy.animations.AnimationClip;
 import cn.kizzzy.animations.AnimationController;
 import cn.kizzzy.animations.AnimationCurve;
+import cn.kizzzy.animations.AnimationCurveBinding;
 import cn.kizzzy.animations.Animator;
 import cn.kizzzy.animations.AnimatorPlayer;
 import cn.kizzzy.animations.AnimatorUpdateType;
 import cn.kizzzy.animations.ConstTangentMode;
-import cn.kizzzy.animations.CurveBinding;
+import cn.kizzzy.animations.ElapseKfEvaluator;
 import cn.kizzzy.animations.KeyFrame;
+import cn.kizzzy.animations.LinkedKfEvaluator;
 import cn.kizzzy.javafx.JavafxControlParameter;
 import cn.kizzzy.javafx.JavafxView;
 import cn.kizzzy.javafx.control.LabeledSlider;
@@ -35,8 +37,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -252,8 +252,8 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     }
     
     private void doExport(ActionEvent actionEvent) {
-        BufferedImage image = new BufferedImage(0, 0, BufferedImage.TYPE_4BYTE_ABGR);
-        Graphics2D context = image.createGraphics();
+        // BufferedImage image = new BufferedImage(0, 0, BufferedImage.TYPE_4BYTE_ABGR);
+        // Graphics2D context = image.createGraphics();
         // todo
     }
     
@@ -318,7 +318,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         setColors(mixed_color_hld, color -> mixedColor = color, this.arg.colors);
         
         List<Element> elements = new LinkedList<>();
-        List<CurveBinding<TrackElementBinder>> curves = new LinkedList<>();
+        List<AnimationCurveBinding<TrackElementBinder>> curves = new LinkedList<>();
         
         for (Track track : this.arg.tracks) {
             int size = track.sfs.size();
@@ -329,7 +329,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             stat.total = Math.max(stat.total, size);
             
             boolean first = true;
-            float track_start_time = 0;
+            long track_start_time = 0;
             
             TrackElement element = new TrackElement(++stat.id, track);
             elements.add(element);
@@ -348,14 +348,12 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             }
             
             if (dfKfs.size() > 0) {
-                curves.add(new CurveBinding<>(
+                curves.add(new AnimationCurveBinding<>(
                     new AnimationCurve<>(
-                        dfKfs.toArray(new KeyFrame[]{}),
-                        new DfLinearTangleMod(),
-                        false
+                        new ElapseKfEvaluator<>(dfKfs.toArray(new KeyFrame[]{}), track_start_time),
+                        new DfLinearTangleMod()
                     ),
-                    dfProcessor,
-                    track_start_time
+                    dfProcessor
                 ));
             }
             
@@ -389,20 +387,18 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             }
             
             if (sfKfs.size() > 0) {
-                curves.add(new CurveBinding<>(
+                curves.add(new AnimationCurveBinding<>(
                     new AnimationCurve<>(
-                        sfKfs.toArray(new KeyFrame[]{}),
-                        new ConstTangentMode<>(),
-                        true
+                        new LinkedKfEvaluator<>(sfKfs.toArray(new KeyFrame[]{}), track_start_time),
+                        new ConstTangentMode<>()
                     ),
-                    sfProcessor,
-                    track_start_time
+                    sfProcessor
                 ));
             }
         }
         
         animatorPlayer.getAnimator().setController(new AnimationController(
-            new AnimationClip(curves.toArray(new CurveBinding[]{}))), true);
+            new AnimationClip(curves.toArray(new AnimationCurveBinding[]{}))), true);
         
         play_btn.setDisable(stat.total <= 1);
         play_btn.setText(animatorPlayer.isPlaying() ? "暂停" : "播放");

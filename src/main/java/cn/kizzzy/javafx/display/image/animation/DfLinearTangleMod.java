@@ -11,10 +11,6 @@ public class DfLinearTangleMod extends LinearTangleMod<TrackElementBinder> {
         Track.DynamicFrame x = xBinder.df;
         Track.DynamicFrame y = yBinder.df;
         
-        if (x.empty || y.empty) {
-            return xBinder;
-        }
-        
         Track.DynamicFrame df = new Track.DynamicFrame();
         
         df.x = lerp(x.x, y.x, rate);

@@ -36,7 +36,6 @@ public class Track {
         public boolean flipY;
         
         public boolean mixed;
-        public boolean empty;
         
         public BufferedImage image;
         public ImageGetter getter;
@@ -59,7 +58,5 @@ public class Track {
         public float color_g;
         public float color_b;
         public float color_a;
-        
-        public boolean empty;
     }
 }
