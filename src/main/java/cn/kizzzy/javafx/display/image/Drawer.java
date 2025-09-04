@@ -4,7 +4,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Scale;
 
 public class Drawer {
     
@@ -70,10 +69,13 @@ public class Drawer {
         float sw = sf.width;
         float sh = sf.height;
         
-        float dx = df_x + sf.x + (flip_x ? sf.width : 0);
-        float dy = df_y + sf.y + (flip_y ? sf.height : 0);
-        float dw = sf.width * (flip_x ? -1 : 1);
-        float dh = sf.height * (flip_y ? -1 : 1);
+        float diff_x = sf.width * (1 - Math.abs(df_scale_x)) / 2f;
+        float diff_y = sf.height * (1 - Math.abs(df_scale_y)) / 2f;
+        
+        float dx = df_x + sf.x + (flip_x ? 1 : 0) * sf.width + (flip_x ? -1 : 1) * diff_x;
+        float dy = df_y + sf.y + (flip_y ? 1 : 0) * sf.height + (flip_y ? -1 : 1) * diff_y;
+        float dw = sf.width * df_scale_x;
+        float dh = sf.height * df_scale_y;
         
         Rect imageRect = new Rect(dx, dy, dw, dh);
         if (drawRect.contains(imageRect)) {
@@ -115,16 +117,9 @@ public class Drawer {
         
         context.save();
         
-        Scale scale = new Scale(df_scale_x, df_scale_y);
-        context.setTransform(
-            scale.getMxx(), scale.getMyx(),
-            scale.getMxy(), scale.getMyy(),
-            scale.getTx(), scale.getTy()
-        );
-        
         float angle = df == null ? 0 : df.rotate_z;
-        float pivot_x = dx + dw / 2;
-        float pivot_y = dy + dh / 2;
+        float pivot_x = dx + (flip_x ? -1 : 1) * dw / 2f;
+        float pivot_y = dy + (flip_y ? -1 : 1) * dh / 2f;
         
         Rotate rotate = new Rotate(angle, pivot_x, pivot_y);
         context.setTransform(

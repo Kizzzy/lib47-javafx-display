@@ -52,11 +52,11 @@ public class Track {
         public float scale_x = 1.0f;
         public float scale_y = 1.0f;
         
-        public float rotate_z;
+        public float rotate_z = 0f;
         
-        public float color_r;
-        public float color_g;
-        public float color_b;
-        public float color_a;
+        public float color_r = 255.0f;
+        public float color_g = 255.0f;
+        public float color_b = 255.0f;
+        public float color_a = 1.0f;
     }
 }
