@@ -16,14 +16,6 @@
         
         <lib47-version>1.0-SNAPSHOT</lib47-version>
         <maven-compiler-plugin-version>3.5.1</maven-compiler-plugin-version>
-        
-        <fastjson-version>2.0.25</fastjson-version>
-        <jaudiotagger-version>2.0.3</jaudiotagger-version>
-        <java-stream-player-version>10.0.2</java-stream-player-version>
-        <jflac-codec-version>1.5.2</jflac-codec-version>
-        <junit.version>4.13.2</junit.version>
-        <mp3spi-version>1.9.5.4</mp3spi-version>
-        <vorbisspi-version>1.0.3.3</vorbisspi-version>
     </properties>
     
     <repositories>
@@ -50,37 +42,43 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
-            <version>${fastjson-version}</version>
+            <version>2.0.25</version>
         </dependency>
         
         <dependency>
             <groupId>org</groupId>
             <artifactId>jaudiotagger</artifactId>
-            <version>${jaudiotagger-version}</version>
+            <version>2.0.3</version>
         </dependency>
         
         <dependency>
             <groupId>com.github.goxr3plus</groupId>
             <artifactId>java-stream-player</artifactId>
-            <version>${java-stream-player-version}</version>
+            <version>10.0.2-fixed</version>
         </dependency>
         
         <dependency>
             <groupId>org.jflac</groupId>
             <artifactId>jflac-codec</artifactId>
-            <version>${jflac-codec-version}</version>
+            <version>1.5.2</version>
         </dependency>
         
         <dependency>
             <groupId>com.googlecode.soundlibs</groupId>
             <artifactId>mp3spi</artifactId>
-            <version>${mp3spi-version}</version>
+            <version>1.9.5.4</version>
         </dependency>
         
         <dependency>
             <groupId>com.googlecode.soundlibs</groupId>
             <artifactId>vorbisspi</artifactId>
-            <version>${vorbisspi-version}</version>
+            <version>1.0.3.3</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.googlecode.soundlibs</groupId>
+            <artifactId>tritonus-share</artifactId>
+            <version>0.3.7.4</version>
         </dependency>
         
         <dependency>
@@ -92,7 +90,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
+            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
     
