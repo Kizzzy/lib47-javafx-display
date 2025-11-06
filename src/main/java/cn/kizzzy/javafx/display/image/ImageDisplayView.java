@@ -123,6 +123,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
     private AoiMap map;
     private IImageGetter<Element> imageGetter;
     
+    private Animator animator;
     private AnimatorPlayer animatorPlayer;
     private SfTrackElementProcessor sfProcessor;
     private DfTrackElementProcessor dfProcessor;
@@ -171,17 +172,17 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         sfProcessor = new SfTrackElementProcessor(this::drawImpl);
         dfProcessor = new DfTrackElementProcessor();
         
-        Animator animator = new Animator();
+        animator = new Animator();
         animator.getStateInfo().callback = sfProcessor;
         
         animatorPlayer = new AnimatorPlayer(animator);
         
         prev_btn.setOnAction(event -> {
-            animatorPlayer.prev();
+            animator.update(AnimatorUpdateType.PREV);
         });
         
         next_btn.setOnAction(event -> {
-            animatorPlayer.next();
+            animator.update(AnimatorUpdateType.NEXT);
         });
         
         play_btn.setOnAction(event -> {
@@ -196,17 +197,17 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         });
         
         speed_sld.valueProperty().addListener((observable, oldValue, newValue) -> {
-            animatorPlayer.getAnimator().setSpeed(newValue.floatValue());
+            animator.setSpeed(newValue.floatValue());
         });
         speed_sld.setValue(1);
         
         loop_chk.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            animatorPlayer.getAnimator().setLoop(newValue);
+            animator.setLoop(newValue);
         });
         loop_chk.setSelected(true);
         
         frame_sld.valueProperty().addListener((observable, oldValue, newValue) -> {
-            animatorPlayer.jumpTo((int) newValue);
+            animator.jumpTo((int) newValue);
         });
         
         canvas.setOnDragDetected(event -> canvas.startFullDrag());
@@ -397,8 +398,9 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
             }
         }
         
-        animatorPlayer.getAnimator().setController(new AnimationController(
+        animator.setController(new AnimationController(
             new AnimationClip(curves.toArray(new AnimationCurveBinding[]{}))), true);
+        animator.setLoop(loop_chk.isSelected());
         
         play_btn.setDisable(stat.total <= 1);
         play_btn.setText(animatorPlayer.isPlaying() ? "暂停" : "播放");
@@ -454,7 +456,7 @@ public class ImageDisplayView extends ImageDisplayViewBase implements Initializa
         }
         
         if (!animatorPlayer.isPlaying()) {
-            animatorPlayer.getAnimator().update(AnimatorUpdateType.NONE);
+            animator.update(AnimatorUpdateType.NONE);
         }
     }
     

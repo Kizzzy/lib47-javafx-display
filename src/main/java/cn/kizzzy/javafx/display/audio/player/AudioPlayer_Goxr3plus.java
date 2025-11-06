@@ -1,5 +1,6 @@
-package cn.kizzzy.javafx.display.audio;
+package cn.kizzzy.javafx.display.audio.player;
 
+import cn.kizzzy.javafx.display.audio.AudioPlayer;
 import com.goxr3plus.streamplayer.stream.StreamPlayer;
 import com.goxr3plus.streamplayer.stream.StreamPlayerEvent;
 import com.goxr3plus.streamplayer.stream.StreamPlayerException;
@@ -13,32 +14,36 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-public class Goxr3plusAudioPlayer implements IAudioPlayer, StreamPlayerListener {
+public class AudioPlayer_Goxr3plus implements AudioPlayer, StreamPlayerListener {
     
     private final StreamPlayer player;
     
     private IProgressListener listener;
     
-    public Goxr3plusAudioPlayer() {
+    public AudioPlayer_Goxr3plus() {
         player = new StreamPlayer();
         player.addStreamPlayerListener(this);
     }
     
-    public void play(String filePath) {
+    public boolean play(String filePath) {
         final File file = new File(filePath);
         try (FileInputStream fis = new FileInputStream(file)) {
             play(fis);
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         }
     }
     
-    public void play(final InputStream stream) {
+    public boolean play(final InputStream stream) {
         try {
             player.open(stream);
             player.play();
+            return true;
         } catch (StreamPlayerException e) {
             e.printStackTrace();
+            return false;
         }
     }
     

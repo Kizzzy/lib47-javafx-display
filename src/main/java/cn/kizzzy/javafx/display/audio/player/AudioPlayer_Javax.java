@@ -1,4 +1,6 @@
-package cn.kizzzy.javafx.display.audio;
+package cn.kizzzy.javafx.display.audio.player;
+
+import cn.kizzzy.javafx.display.audio.AudioPlayer;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -16,22 +18,24 @@ import java.io.InputStream;
 
 import static javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED;
 
-public class JavaxAudioPlayer implements IAudioPlayer, LineListener {
+public class AudioPlayer_Javax implements AudioPlayer, LineListener {
     
     private volatile SourceDataLine audioClip;
     
     private IProgressListener listener;
     
-    public void play(String filePath) {
+    public boolean play(String filePath) {
         final File file = new File(filePath);
         try (FileInputStream fis = new FileInputStream(file)) {
             play(fis);
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         }
     }
     
-    public void play(final InputStream stream) {
+    public boolean play(final InputStream stream) {
         try (final AudioInputStream audioIs = AudioSystem.getAudioInputStream(stream)) {
             final AudioFormat format = getOutFormat(audioIs.getFormat());
             final DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
@@ -54,8 +58,10 @@ public class JavaxAudioPlayer implements IAudioPlayer, LineListener {
                 }
                 
             }).start();
+            return true;
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
             e.printStackTrace();
+            return false;
         }
     }
     

@@ -2,11 +2,11 @@ package cn.kizzzy.javafx.display.audio;
 
 import java.io.InputStream;
 
-public interface IAudioPlayer {
+public interface AudioPlayer {
     
-    void play(String filePath);
+    boolean play(String filePath);
     
-    void play(final InputStream stream);
+    boolean play(final InputStream stream);
     
     void pause();
     

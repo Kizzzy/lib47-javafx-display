@@ -45,6 +45,13 @@
             <version>2.0.25</version>
         </dependency>
         
+        <!-- JavaFX 用于音频支持 -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>17.0.2</version>
+        </dependency>
+        
         <dependency>
             <groupId>org</groupId>
             <artifactId>jaudiotagger</artifactId>
